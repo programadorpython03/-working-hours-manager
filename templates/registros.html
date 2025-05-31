@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Registro de Horas{% endblock %}
+
+{% block content %}
+<h1>Registro de Horas Trabalhadas</h1>
+
+<div class="card">
+  <form id="form-registro" method="post">
+    <label for="funcionario_id">Funcionário</label>
+    <select name="funcionario_id" id="funcionario_id" required>
+      <option value="">Selecione</option>
+      {% for f in funcionarios %}
+      <option value="{{ f.id }}">{{ f.nome }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="data_trabalho">Data</label>
+    <input type="date" id="data_trabalho" name="data_trabalho" required>
+
+    <label for="hora_entrada">Hora Entrada</label>
+    <input type="time" id="hora_entrada" name="hora_entrada" required>
+
+    <label for="hora_almoco_saida">Saída Almoço</label>
+    <input type="time" id="hora_almoco_saida" name="hora_almoco_saida">
+
+    <label for="hora_almoco_volta">Volta Almoço</label>
+    <input type="time" id="hora_almoco_volta" name="hora_almoco_volta">
+
+    <label for="hora_saida">Hora Saída</label>
+    <input type="time" id="hora_saida" name="hora_saida" required>
+
+    <label for="observacoes">Observações</label>
+    <textarea name="observacoes" id="observacoes"></textarea>
+
+    <div id="resultado-calc" class="card">
+      <p><strong>Horas Normais:</strong> <span id="horas_normais">0.00</span></p>
+      <p><strong>Horas Extras:</strong> <span id="horas_extras">0.00</span></p>
+      <p><strong>Adicional Noturno:</strong> <span id="adicional_noturno">0.00</span></p>
+    </div>
+
+    <button type="submit">Salvar Registro</button>
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/registros.js') }}"></script>
+{% endblock %}

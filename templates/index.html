@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Controle de Horas{% endblock %}
+
+{% block content %}
+<h1>Resumo Geral</h1>
+<div class="dashboard-grid">
+  <div class="card">
+    <h2>Total de Funcionários</h2>
+    <p>{{ total_funcionarios }}</p>
+  </div>
+  <div class="card">
+    <h2>Registros do Mês</h2>
+    <p>{{ total_registros }}</p>
+  </div>
+  <div class="card">
+    <h2>Horas Extras</h2>
+    <p>{{ total_horas_extras }}h</p>
+  </div>
+</div>
+{% endblock %}

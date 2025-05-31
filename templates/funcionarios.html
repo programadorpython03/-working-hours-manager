@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Funcionários - Controle de Horas{% endblock %}
+
+{% block content %}
+<h1>Cadastro de Funcionários</h1>
+
+<div class="card">
+  <form id="form-funcionario" method="post">
+    <label for="nome">Nome*</label>
+    <input type="text" id="nome" name="nome" required>
+
+    <label for="cargo">Cargo</label>
+    <input type="text" id="cargo" name="cargo">
+
+    <button type="submit">Salvar Funcionário</button>
+  </form>
+</div>
+
+<hr>
+
+<h2>Funcionários Cadastrados</h2>
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Cargo</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in funcionarios %}
+      <tr>
+        <td>{{ f.nome }}</td>
+        <td>{{ f.cargo or '-' }}</td>
+        <td>{{ 'Ativo' if f.ativo else 'Inativo' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('funcionarios.toggle_status', id=f.id) }}">
+            <button type="submit">
+              {{ 'Desativar' if f.ativo else 'Ativar' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script src="{{ url_for('static', filename='js/funcionarios.js') }}"></script>
+{% endblock %}

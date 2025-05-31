@@ -1,6 +1,7 @@
 from supabase import create_client
 from config import Config
 import logging
+import os
 
 # Configuração do logging
 logging.basicConfig(level=logging.INFO)
@@ -8,9 +9,16 @@ logger = logging.getLogger(__name__)
 
 try:
     # Validação das variáveis de ambiente
-    if not Config.SUPABASE_URL or not Config.SUPABASE_KEY:
-        raise ValueError("SUPABASE_URL e SUPABASE_KEY são obrigatórios no arquivo .env")
+    if not Config.SUPABASE_URL:
+        logger.error("SUPABASE_URL não encontrada nas variáveis de ambiente")
+        raise ValueError("SUPABASE_URL é obrigatória")
+    
+    if not Config.SUPABASE_KEY:
+        logger.error("SUPABASE_KEY não encontrada nas variáveis de ambiente")
+        raise ValueError("SUPABASE_KEY é obrigatória")
 
+    logger.info("Tentando conectar ao Supabase...")
+    
     # Criação do cliente Supabase com tratamento de erro
     supabase = create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)
     

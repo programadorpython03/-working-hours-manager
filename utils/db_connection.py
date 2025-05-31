@@ -1,4 +1,4 @@
-from supabase import create_client
+from supabase import create_client, Client
 from config import Config
 import logging
 import os
@@ -20,7 +20,10 @@ try:
     logger.info("Tentando conectar ao Supabase...")
     
     # Criação do cliente Supabase com tratamento de erro
-    supabase = create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)
+    supabase: Client = create_client(
+        supabase_url=Config.SUPABASE_URL,
+        supabase_key=Config.SUPABASE_KEY
+    )
     
     # Teste de conexão
     supabase.table('funcionarios').select('count').limit(1).execute()

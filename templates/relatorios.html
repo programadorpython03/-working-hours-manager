@@ -62,6 +62,7 @@
                                     <th class="text-center">Volta Almoço</th>
                                     <th class="text-center">Saída</th>
                                     <th class="text-center">Total</th>
+                                    <th class="text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,11 +76,22 @@
                                         <td class="text-center">{{ registro.hora_almoco_volta.strftime('%H:%M') if registro.hora_almoco_volta else '-' }}</td>
                                         <td class="text-center">{{ registro.hora_saida.strftime('%H:%M') if registro.hora_saida else '-' }}</td>
                                         <td class="text-center">{{ registro.total_horas.strftime('%H:%M') }}</td>
+                                        <td class="text-center">
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <a href="{{ url_for('registros.editar', id=registro.id) }}" class="btn btn-primary btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-danger btn-sm" title="Excluir" 
+                                                        onclick="confirmarExclusao('{{ registro.id }}', '{{ registro.data.strftime('%d/%m/%Y') }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
                                     <tr>
-                                        <td colspan="7" class="text-center py-4">
+                                        <td colspan="8" class="text-center py-4">
                                             <div class="alert alert-info mb-0">
                                                 Nenhum registro encontrado para o período selecionado.
                                             </div>
@@ -126,11 +138,39 @@
     </div>
 </div>
 
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalExclusao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o registro do dia <span id="dataRegistro"></span>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formExclusao" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
 <script>
     // Inicializa os dados do gráfico
     const dadosGraficos = {{ grafico_data | tojson | safe }};
+
+    // Função para confirmar exclusão
+    function confirmarExclusao(id, data) {
+        document.getElementById('dataRegistro').textContent = data;
+        document.getElementById('formExclusao').action = "{{ url_for('registros.excluir', id='') }}" + id;
+        new bootstrap.Modal(document.getElementById('modalExclusao')).show();
+    }
 </script>
 {% endblock %}
 

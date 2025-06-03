@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Editar Registro de Horas{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="text-center mb-4">Editar Registro de Horas</h1>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post">
+                        <div class="mb-3">
+                            <label for="funcionario_id" class="form-label">Funcionário</label>
+                            <select name="funcionario_id" id="funcionario_id" class="form-select" required>
+                                <option value="">Selecione</option>
+                                {% for f in funcionarios %}
+                                <option value="{{ f.id }}" {% if f.id == registro.funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="data_trabalho" class="form-label">Data</label>
+                            <input type="date" id="data_trabalho" name="data_trabalho" class="form-control" value="{{ registro.data_trabalho }}" required>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="hora_entrada" class="form-label">Hora Entrada</label>
+                                <input type="time" id="hora_entrada" name="hora_entrada" class="form-control" value="{{ registro.hora_entrada }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="hora_saida" class="form-label">Hora Saída</label>
+                                <input type="time" id="hora_saida" name="hora_saida" class="form-control" value="{{ registro.hora_saida }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="hora_almoco_saida" class="form-label">Saída Almoço</label>
+                                <input type="time" id="hora_almoco_saida" name="hora_almoco_saida" class="form-control" value="{{ registro.hora_almoco_saida }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="hora_almoco_volta" class="form-label">Volta Almoço</label>
+                                <input type="time" id="hora_almoco_volta" name="hora_almoco_volta" class="form-control" value="{{ registro.hora_almoco_volta }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">Observações</label>
+                            <textarea name="observacoes" id="observacoes" class="form-control">{{ registro.observacoes }}</textarea>
+                        </div>
+
+                        <div id="resultado-calc" class="card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p class="mb-0"><strong>Horas Normais:</strong> <span id="horas_normais">{{ "%.2f"|format(registro.horas_normais) }}</span></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-0"><strong>Horas Extras:</strong> <span id="horas_extras">{{ "%.2f"|format(registro.horas_extras) }}</span></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-0"><strong>Adicional Noturno:</strong> <span id="adicional_noturno">{{ "%.2f"|format(registro.adicional_noturno) }}</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('registros.registros') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/registros.js') }}"></script>
+{% endblock %} 

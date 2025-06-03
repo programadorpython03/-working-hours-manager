@@ -1,16 +1,21 @@
-function parseTime(str) {
+function converterHora(str) {
     if (!str) return null;
     const [h, m] = str.split(':').map(Number);
     return h * 60 + m;
   }
   
-  function calc() {
-    const entrada = parseTime(document.getElementById("hora_entrada").value);
-    const almoco_saida = parseTime(document.getElementById("hora_almoco_saida").value);
-    const almoco_volta = parseTime(document.getElementById("hora_almoco_volta").value);
-    const saida = parseTime(document.getElementById("hora_saida").value);
+  function calcular() {
+    const entrada = converterHora(document.getElementById("hora_entrada").value);
+    const almoco_saida = converterHora(document.getElementById("hora_almoco_saida").value);
+    const almoco_volta = converterHora(document.getElementById("hora_almoco_volta").value);
+    let saida = converterHora(document.getElementById("hora_saida").value);
   
     if (entrada != null && saida != null) {
+      // Se a hora de saída for menor que a hora de entrada, significa que é no dia seguinte
+      if (saida < entrada) {
+        saida += 24 * 60; // Adiciona 24 horas (1440 minutos)
+      }
+
       let intervalo = 0;
       if (almoco_saida != null && almoco_volta != null)
         intervalo = almoco_volta - almoco_saida;
@@ -27,6 +32,6 @@ function parseTime(str) {
   }
   
   ["hora_entrada", "hora_almoco_saida", "hora_almoco_volta", "hora_saida"].forEach(id => {
-    document.getElementById(id).addEventListener('change', calc);
+    document.getElementById(id).addEventListener('change', calcular);
   });
   

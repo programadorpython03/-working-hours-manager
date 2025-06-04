@@ -2,20 +2,207 @@
 
 {% block title %}Dashboard - Controle de Horas{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+<style>
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+}
+
+.stat-card h3 {
+    font-size: 1.1rem;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.chart-container {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.chart-container h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.recent-records {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-records h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.table th {
+    color: var(--secondary-color);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 1em;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Resumo Geral</h1>
-<div class="dashboard-grid">
-  <div class="card">
-    <h2>Total de Funcionários</h2>
-    <p>{{ total_funcionarios }}</p>
-  </div>
-  <div class="card">
-    <h2>Registros do Mês</h2>
-    <p>{{ total_registros }}</p>
-  </div>
-  <div class="card">
-    <h2>Horas Extras</h2>
-    <p>{{ total_horas_extras }}h</p>
-  </div>
+<div class="container-fluid py-4">
+    <h1 class="mb-4">Dashboard</h1>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <i class="fas fa-users"></i>
+            <h3>Total de Funcionários</h3>
+            <div class="value">{{ total_funcionarios }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <i class="fas fa-calendar-check"></i>
+            <h3>Registros do Mês</h3>
+            <div class="value">{{ total_registros }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <i class="fas fa-clock"></i>
+            <h3>Horas Extras</h3>
+            <div class="value">{{ total_horas_extras }}h</div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Horas -->
+    <div class="chart-container">
+        <h2>Horas Trabalhadas por Mês</h2>
+        <canvas id="horasChart"></canvas>
+    </div>
+
+    <!-- Registros Recentes -->
+    <div class="recent-records">
+        <h2>Registros Recentes</h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Funcionário</th>
+                        <th>Horas Normais</th>
+                        <th>Horas Extras</th>
+                        <th>Adicional Noturno</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros_recentes %}
+                    <tr>
+                        <td>{{ registro.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ registro.funcionario }}</td>
+                        <td>{{ registro.horas_normais }}h</td>
+                        <td>
+                            {% if registro.horas_extras > 0 %}
+                            <span class="badge bg-warning">{{ registro.horas_extras }}h</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if registro.adicional_noturno > 0 %}
+                            <span class="badge bg-info">{{ registro.adicional_noturno }}h</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('horasChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ grafico_data.labels | tojson }},
+            datasets: [{
+                label: 'Horas Normais',
+                data: {{ grafico_data.horas_normais | tojson }},
+                backgroundColor: 'rgba(52, 152, 219, 0.5)',
+                borderColor: 'rgba(52, 152, 219, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Horas Extras',
+                data: {{ grafico_data.horas_extras | tojson }},
+                backgroundColor: 'rgba(241, 196, 15, 0.5)',
+                borderColor: 'rgba(241, 196, 15, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Adicional Noturno',
+                data: {{ grafico_data.adicional_noturno | tojson }},
+                backgroundColor: 'rgba(155, 89, 182, 0.5)',
+                borderColor: 'rgba(155, 89, 182, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Horas'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

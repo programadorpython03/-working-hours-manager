@@ -131,7 +131,7 @@ def registros():
         flash('Ocorreu um erro inesperado', 'error')
         return redirect(url_for('registros.registros'))
 
-@registros_bp.route('/editar/<id>', methods=['GET', 'POST'])
+@registros_bp.route('/editar_registro/<id>', methods=['GET', 'POST'])
 def editar_registro(id):
     try:
         if request.method == 'POST':

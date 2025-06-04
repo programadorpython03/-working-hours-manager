@@ -171,6 +171,12 @@
         document.getElementById('formExclusao').action = "{{ url_for('registros.excluir', id='') }}" + id;
         new bootstrap.Modal(document.getElementById('modalExclusao')).show();
     }
+
+    // Função para editar registro
+    function editarRegistro(id) {
+        const baseUrl = "{{ url_for('registros.editar_registro', id=0) }}".replace('/0', '');
+        window.location.href = baseUrl + '/' + id;
+    }
 </script>
 {% endblock %}
 

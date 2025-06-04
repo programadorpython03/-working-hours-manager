@@ -2,51 +2,180 @@
 
 {% block title %}Funcionários - Controle de Horas{% endblock %}
 
+{% block extra_css %}
+<style>
+.content-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.content-card h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background-color: #f39c12;
+    border-color: #f39c12;
+    transform: translateY(-1px);
+}
+
+.table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: var(--light-bg);
+    color: var(--secondary-color);
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.badge {
+    padding: 0.5em 1em;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.badge-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.badge-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Cadastro de Funcionários</h1>
+<div class="container-fluid py-4">
+    <h1 class="mb-4">Cadastro de Funcionários</h1>
 
-<div class="card">
-  <form id="form-funcionario" method="post">
-    <label for="nome">Nome*</label>
-    <input type="text" id="nome" name="nome" required>
+    <div class="content-card">
+        <h2>Novo Funcionário</h2>
+        <form id="form-funcionario" method="post">
+            <div class="form-group">
+                <label for="nome">Nome*</label>
+                <input type="text" id="nome" name="nome" class="form-control" required>
+            </div>
 
-    <label for="cargo">Cargo</label>
-    <input type="text" id="cargo" name="cargo">
+            <div class="form-group">
+                <label for="cargo">Cargo</label>
+                <input type="text" id="cargo" name="cargo" class="form-control">
+            </div>
 
-    <button type="submit">Salvar Funcionário</button>
-  </form>
-</div>
-
-<hr>
-
-<h2>Funcionários Cadastrados</h2>
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Cargo</th>
-        <th>Status</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for f in funcionarios %}
-      <tr>
-        <td>{{ f.nome }}</td>
-        <td>{{ f.cargo or '-' }}</td>
-        <td>{{ 'Ativo' if f.ativo else 'Inativo' }}</td>
-        <td>
-          <form method="post" action="{{ url_for('funcionarios.toggle_status', id=f.id) }}">
-            <button type="submit">
-              {{ 'Desativar' if f.ativo else 'Ativar' }}
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Salvar Funcionário
             </button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </form>
+    </div>
+
+    <div class="content-card">
+        <h2>Funcionários Cadastrados</h2>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Cargo</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in funcionarios %}
+                    <tr>
+                        <td>{{ f.nome }}</td>
+                        <td>{{ f.cargo or '-' }}</td>
+                        <td>
+                            {% if f.ativo %}
+                            <span class="badge badge-success">Ativo</span>
+                            {% else %}
+                            <span class="badge badge-danger">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="{{ url_for('funcionarios.toggle_status', id=f.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-warning">
+                                    {% if f.ativo %}
+                                    <i class="fas fa-user-slash me-2"></i>Desativar
+                                    {% else %}
+                                    <i class="fas fa-user-check me-2"></i>Ativar
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/funcionarios.js') }}"></script>

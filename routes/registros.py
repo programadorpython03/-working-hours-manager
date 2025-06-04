@@ -132,7 +132,7 @@ def registros():
         return redirect(url_for('registros.registros'))
 
 @registros_bp.route('/editar/<id>', methods=['GET', 'POST'])
-def editar(id):
+def editar_registro(id):
     try:
         if request.method == 'POST':
             data = request.form
@@ -145,7 +145,7 @@ def editar(id):
             
             if not all([funcionario_id, data_trabalho, hora_entrada, hora_saida]):
                 flash('Todos os campos obrigatórios devem ser preenchidos', 'error')
-                return redirect(url_for('registros.editar', id=id))
+                return redirect(url_for('registros.editar_registro', id=id))
             
             # Validação dos horários
             hora_entrada = validar_horario(hora_entrada)
@@ -155,7 +155,7 @@ def editar(id):
             
             if not all([hora_entrada, hora_saida]):
                 flash('Horários de entrada e saída são obrigatórios e devem ser válidos', 'error')
-                return redirect(url_for('registros.editar', id=id))
+                return redirect(url_for('registros.editar_registro', id=id))
             
             # Cálculo das horas
             try:
@@ -168,7 +168,7 @@ def editar(id):
             except Exception as e:
                 logger.error(f"Erro ao calcular horas: {str(e)}")
                 flash('Erro ao calcular horas trabalhadas', 'error')
-                return redirect(url_for('registros.editar', id=id))
+                return redirect(url_for('registros.editar_registro', id=id))
 
             # Atualização no banco
             try:
@@ -189,7 +189,7 @@ def editar(id):
             except Exception as e:
                 logger.error(f"Erro ao atualizar registro: {str(e)}")
                 flash('Erro ao atualizar registro de horas', 'error')
-                return redirect(url_for('registros.editar', id=id))
+                return redirect(url_for('registros.editar_registro', id=id))
 
         # Busca o registro para edição
         try:

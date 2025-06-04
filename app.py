@@ -1,6 +1,7 @@
 from flask import Flask, render_template, flash, request, send_file, redirect, url_for
 from routes.funcionarios import funcionarios_bp
 from routes.registros import registros_bp
+from routes.relatorios import relatorios_bp
 from config import Config
 from utils.db_connection import supabase
 import logging
@@ -26,6 +27,7 @@ if missing_vars:
 # Blueprints
 app.register_blueprint(funcionarios_bp, url_prefix='/funcionarios')
 app.register_blueprint(registros_bp, url_prefix='/registros')
+app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
 
 @app.route('/')
 def index():
@@ -245,5 +247,4 @@ def handle_exception(e):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 3000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True)

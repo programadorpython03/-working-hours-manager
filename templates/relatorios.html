@@ -42,7 +42,7 @@
                             <button onclick="exportarCSV()" class="btn btn-success me-2">
                                 <i class="fas fa-file-excel me-2"></i>Exportar CSV
                             </button>
-                            <form method="POST" action="{{ url_for('exportar_pdf') }}" style="display: inline;">
+                            <form method="POST" action="{{ url_for('relatorios.exportar_pdf') }}" style="display: inline;">
                                 <input type="hidden" name="funcionario_id" value="{{ filtro_id }}">
                                 <input type="hidden" name="mes" value="{{ mes_ano }}">
                                 <button type="submit" class="btn btn-danger">
@@ -78,7 +78,7 @@
                                         <td class="text-center">{{ registro.total_horas.strftime('%H:%M') }}</td>
                                         <td class="text-center">
                                             <div class="d-flex gap-2 justify-content-center">
-                                                <a href="{{ url_for('registros.editar', id=registro.id) }}" class="btn btn-primary btn-sm" title="Editar">
+                                                <a href="{{ url_for('registros.editar_registro', id=registro.id) }}" class="btn btn-primary btn-sm" title="Editar">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-danger btn-sm" title="Excluir" 

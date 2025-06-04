@@ -13,8 +13,8 @@ function confirmarExclusao(id, data) {
 
 // Função para editar registro
 function editarRegistro(id) {
-    // Redireciona para a página de edição usando o prefixo do blueprint
-    window.location.href = `/registros/editar/${id}`;
+    // Redireciona para a página de edição usando a URL gerada pelo Flask
+    window.location.href = `/registros/editar_registro/${id}`;
 }
 
 // Função para exportar CSV
@@ -25,7 +25,7 @@ function exportarCSV() {
     const mes = urlParams.get('mes');
 
     // Constrói a URL de exportação
-    let url = '/exportar-csv';
+    let url = '/relatorios/exportar-csv';
     const params = [];
     
     if (funcionarioId) {
@@ -54,9 +54,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: dadosGraficos.labels,
                 datasets: [{
                     label: 'Horas Trabalhadas',
-                    data: dadosGraficos.horas,
+                    data: dadosGraficos.horas_normais,
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Horas Extras',
+                    data: dadosGraficos.horas_extras,
+                    backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Adicional Noturno',
+                    data: dadosGraficos.adicional_noturno,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
                     borderWidth: 1
                 }]
             },
@@ -80,12 +92,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top'
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `Horas: ${context.raw}`;
+                                return `${context.dataset.label}: ${context.raw}`;
                             }
                         }
                     }

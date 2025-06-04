@@ -79,12 +79,149 @@
     font-size: 0.9rem;
     padding: 0.5em 1em;
 }
+
+.filter-section {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.filter-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.filter-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+    transform: translateY(-1px);
+}
+
+.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: -0.75rem 0 0 -0.75rem;
+    border: 2px solid var(--accent-color);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--dark-bg);
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    padding: 0.5rem;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <h1 class="mb-4">Dashboard</h1>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <h2>Filtros</h2>
+        <form id="filter-form" class="filter-form" method="get">
+            <div class="form-group">
+                <label for="mes">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" value="{{ mes_atual }}">
+            </div>
+            <div class="form-group">
+                <label for="funcionario">Funcionário</label>
+                <select id="funcionario" name="funcionario_id" class="form-control">
+                    <option value="">Todos</option>
+                    {% for f in funcionarios %}
+                    <option value="{{ f.id }}" {% if f.id == funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter me-2"></i>Filtrar
+            </button>
+        </form>
+    </div>
     
     <!-- Cards de Estatísticas -->
     <div class="dashboard-grid">
@@ -160,8 +297,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Configuração do gráfico
     const ctx = document.getElementById('horasChart').getContext('2d');
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: {{ grafico_data.labels | tojson }},
@@ -199,9 +337,69 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 legend: {
                     position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(2) + 'h';
+                            }
+                            return label;
+                        }
+                    }
                 }
             }
         }
+    });
+
+    // Manipulação do formulário de filtros
+    const filterForm = document.getElementById('filter-form');
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        form.classList.add('loading');
+
+        // Coleta os dados do formulário
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        // Faz a requisição
+        fetch(`${window.location.pathname}?${params.toString()}`)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Atualiza os cards de estatísticas
+                document.querySelectorAll('.stat-card .value').forEach((el, index) => {
+                    const newValue = doc.querySelectorAll('.stat-card .value')[index].textContent;
+                    el.textContent = newValue;
+                });
+
+                // Atualiza a tabela de registros recentes
+                const newTable = doc.querySelector('.table tbody');
+                document.querySelector('.table tbody').innerHTML = newTable.innerHTML;
+
+                // Atualiza o gráfico
+                const newData = JSON.parse(doc.querySelector('#horasChart').dataset.chart);
+                chart.data.labels = newData.labels;
+                chart.data.datasets.forEach((dataset, index) => {
+                    dataset.data = newData.datasets[index].data;
+                });
+                chart.update();
+
+                // Remove o estado de loading
+                form.classList.remove('loading');
+            })
+            .catch(error => {
+                console.error('Erro ao atualizar dados:', error);
+                form.classList.remove('loading');
+                alert('Erro ao atualizar dados. Por favor, tente novamente.');
+            });
     });
 });
 </script>

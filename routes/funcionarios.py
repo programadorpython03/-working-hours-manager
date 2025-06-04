@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from utils.db_connection import supabase
+from utils.db_connection import supabase, get_supabase_data
 from datetime import datetime
 import uuid
 import logging
@@ -37,8 +37,8 @@ def funcionarios():
 
         # Busca de funcionários com tratamento de erro
         try:
-            data = supabase.table('funcionarios').select('*').order('created_at', desc=True).execute()
-            funcionarios = data.data
+            response = supabase.table('funcionarios').select('*').order('created_at', desc=True).execute()
+            funcionarios = get_supabase_data(response)
         except Exception as e:
             logger.error(f"Erro ao buscar funcionários: {str(e)}")
             flash('Erro ao carregar lista de funcionários', 'error')
@@ -57,9 +57,10 @@ def toggle_status(id):
             flash('ID do funcionário não fornecido', 'error')
             return redirect(url_for('funcionarios.funcionarios'))
             
-        f = supabase.table('funcionarios').select('*').eq('id', id).single().execute()
-        if f.data:
-            novo_status = not f.data['ativo']
+        response = supabase.table('funcionarios').select('*').eq('id', id).single().execute()
+        funcionario = get_supabase_data(response)
+        if funcionario:
+            novo_status = not funcionario[0]['ativo']
             supabase.table('funcionarios').update({'ativo': novo_status}).eq('id', id).execute()
             flash('Status atualizado com sucesso!', 'success')
         else:

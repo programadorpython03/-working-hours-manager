@@ -120,17 +120,24 @@
         <h2>Novo Funcionário</h2>
         <form id="form-funcionario" method="post">
             <div class="form-group">
-                <label for="nome">Nome*</label>
+                <label for="nome" class="tooltip">
+                    Nome*
+                    <span class="tooltip-text">Nome completo do funcionário</span>
+                </label>
                 <input type="text" id="nome" name="nome" class="form-control" required>
             </div>
 
             <div class="form-group">
-                <label for="cargo">Cargo</label>
+                <label for="cargo" class="tooltip">
+                    Cargo
+                    <span class="tooltip-text">Cargo ou função do funcionário na empresa</span>
+                </label>
                 <input type="text" id="cargo" name="cargo" class="form-control">
             </div>
 
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary tooltip">
                 <i class="fas fa-save me-2"></i>Salvar Funcionário
+                <span class="tooltip-text">Clique para salvar o cadastro do funcionário</span>
             </button>
         </form>
     </div>
@@ -154,18 +161,26 @@
                         <td>{{ f.cargo or '-' }}</td>
                         <td>
                             {% if f.ativo %}
-                            <span class="badge badge-success">Ativo</span>
+                            <span class="badge badge-success tooltip">
+                                Ativo
+                                <span class="tooltip-text">Funcionário está ativo no sistema</span>
+                            </span>
                             {% else %}
-                            <span class="badge badge-danger">Inativo</span>
+                            <span class="badge badge-danger tooltip">
+                                Inativo
+                                <span class="tooltip-text">Funcionário está inativo no sistema</span>
+                            </span>
                             {% endif %}
                         </td>
                         <td>
                             <form method="post" action="{{ url_for('funcionarios.toggle_status', id=f.id) }}" class="d-inline">
-                                <button type="submit" class="btn btn-warning">
+                                <button type="submit" class="btn btn-warning tooltip">
                                     {% if f.ativo %}
                                     <i class="fas fa-user-slash me-2"></i>Desativar
+                                    <span class="tooltip-text">Clique para desativar o funcionário</span>
                                     {% else %}
                                     <i class="fas fa-user-check me-2"></i>Ativar
+                                    <span class="tooltip-text">Clique para ativar o funcionário</span>
                                     {% endif %}
                                 </button>
                             </form>

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from utils.db_connection import supabase
+from utils.db_connection import supabase, get_supabase_data
 from datetime import datetime, time
 import uuid
 import logging
@@ -83,7 +83,8 @@ def registros():
         
         # Busca de funcionários ativos
         try:
-            funcionarios = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute().data
+            response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
+            funcionarios = get_supabase_data(response)
         except Exception as e:
             logger.error(f"Erro ao buscar funcionários: {str(e)}")
             flash('Erro ao carregar lista de funcionários', 'error')
@@ -95,7 +96,8 @@ def registros():
             query = supabase.table('registros_horas').select('*, funcionarios(nome)')
             query = query.gte('data_trabalho', f"{ano}-{mes}-01")
             query = query.lt('data_trabalho', f"{ano}-{int(mes)+1:02d}-01" if int(mes) < 12 else f"{int(ano)+1}-01-01")
-            registros = query.order('data_trabalho', desc=True).execute().data
+            response = query.order('data_trabalho', desc=True).execute()
+            registros = get_supabase_data(response)
 
             # Processa os registros para o formato da tabela
             registros_processados = []
@@ -193,24 +195,25 @@ def editar_registro(id):
 
         # Busca o registro para edição
         try:
-            registro = supabase.table('registros_horas').select('*, funcionarios(nome)').eq('id', id).single().execute()
-            if not registro.data:
+            response = supabase.table('registros_horas').select('*, funcionarios(nome)').eq('id', id).single().execute()
+            registro = get_supabase_data(response)
+            if not registro:
                 flash('Registro não encontrado', 'error')
                 return redirect(url_for('registros.registros'))
             
-            registro = registro.data
-            funcionarios = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute().data
+            registro = registro[0]  # Pega o primeiro item da lista
+            response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
+            funcionarios = get_supabase_data(response)
             
-            return render_template('editar_registro.html',
-                                registro=registro,
-                                funcionarios=funcionarios)
+            return render_template('editar_registro.html', 
+                                 registro=registro,
+                                 funcionarios=funcionarios)
         except Exception as e:
-            logger.error(f"Erro ao buscar registro para edição: {str(e)}")
+            logger.error(f"Erro ao buscar registro: {str(e)}")
             flash('Erro ao carregar registro', 'error')
             return redirect(url_for('registros.registros'))
-            
     except Exception as e:
-        logger.error(f"Erro não tratado na rota editar: {str(e)}")
+        logger.error(f"Erro não tratado na rota editar_registro: {str(e)}")
         flash('Ocorreu um erro inesperado', 'error')
         return redirect(url_for('registros.registros'))
 
@@ -230,3 +233,106 @@ def excluir(id):
         logger.error(f"Erro não tratado na rota excluir: {str(e)}")
         flash('Ocorreu um erro inesperado', 'error')
         return redirect(url_for('registros.registros'))
+
+def verificar_horas_extras(funcionario_id, mes_ano):
+    """Verifica se um funcionário ultrapassou o limite de horas extras no mês"""
+    try:
+        # Obtém o primeiro e último dia do mês
+        primeiro_dia = f"{mes_ano}-01"
+        if mes_ano[5:7] == "12":
+            ultimo_dia = f"{mes_ano[:4]}-12-31"
+        else:
+            ultimo_dia = f"{mes_ano[:4]}-{int(mes_ano[5:7])+1:02d}-01"
+        
+        # Busca registros do mês
+        registros = supabase.table('registros_horas').select('*').eq('funcionario_id', funcionario_id).gte('data_trabalho', primeiro_dia).lt('data_trabalho', ultimo_dia).execute().data
+        
+        # Calcula total de horas extras
+        total_horas_extras = sum(float(r['horas_extras'] or 0) for r in registros)
+        
+        # Limite de horas extras (exemplo: 40 horas por mês)
+        LIMITE_HORAS_EXTRAS = 40
+        
+        if total_horas_extras > LIMITE_HORAS_EXTRAS:
+            # Busca dados do funcionário
+            funcionario = supabase.table('funcionarios').select('nome').eq('id', funcionario_id).execute().data[0]
+            
+            # Cria notificação
+            notificacao = {
+                'tipo': 'alerta',
+                'titulo': 'Horas Extras Excedidas',
+                'mensagem': f'O funcionário {funcionario["nome"]} ultrapassou o limite de {LIMITE_HORAS_EXTRAS}h de horas extras no mês. Total: {total_horas_extras:.2f}h',
+                'data': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'lida': False
+            }
+            
+            # Salva notificação
+            supabase.table('notificacoes').insert(notificacao).execute()
+            
+            return True, total_horas_extras
+        
+        return False, total_horas_extras
+    
+    except Exception as e:
+        logger.error(f"Erro ao verificar horas extras: {str(e)}")
+        return False, 0
+
+@registros_bp.route('/novo', methods=['GET', 'POST'])
+def novo_registro():
+    if request.method == 'POST':
+        try:
+            # Obtém dados do formulário
+            funcionario_id = request.form.get('funcionario_id')
+            data_trabalho = request.form.get('data_trabalho')
+            hora_entrada = request.form.get('hora_entrada')
+            hora_saida = request.form.get('hora_saida')
+            hora_almoco_saida = request.form.get('hora_almoco_saida')
+            hora_almoco_volta = request.form.get('hora_almoco_volta')
+            observacoes = request.form.get('observacoes')
+            
+            # Calcula horas trabalhadas
+            horas_normais, horas_extras, adicional_noturno = calcular_horas(
+                hora_entrada, hora_saida, hora_almoco_saida, hora_almoco_volta
+            )
+            
+            # Prepara dados para inserção
+            registro = {
+                'funcionario_id': funcionario_id,
+                'data_trabalho': data_trabalho,
+                'hora_entrada': hora_entrada,
+                'hora_saida': hora_saida,
+                'hora_almoco_saida': hora_almoco_saida,
+                'hora_almoco_volta': hora_almoco_volta,
+                'horas_normais': horas_normais,
+                'horas_extras': horas_extras,
+                'adicional_noturno': adicional_noturno,
+                'observacoes': observacoes
+            }
+            
+            # Insere registro
+            supabase.table('registros_horas').insert(registro).execute()
+            
+            # Verifica horas extras
+            mes_ano = data_trabalho[:7]  # Formato: YYYY-MM
+            tem_excesso, total_horas = verificar_horas_extras(funcionario_id, mes_ano)
+            
+            if tem_excesso:
+                flash(f'Atenção: O funcionário ultrapassou o limite de horas extras no mês. Total: {total_horas:.2f}h', 'warning')
+            else:
+                flash('Registro salvo com sucesso!', 'success')
+            
+            return redirect(url_for('registros.registros'))
+            
+        except Exception as e:
+            logger.error(f"Erro ao salvar registro: {str(e)}")
+            flash('Erro ao salvar registro', 'error')
+            return redirect(url_for('registros.registros'))
+    
+    # GET: Exibe formulário
+    try:
+        funcionarios = supabase.table('funcionarios').select('*').eq('ativo', True).execute().data
+        return render_template('registros.html', funcionarios=funcionarios)
+    except Exception as e:
+        logger.error(f"Erro ao carregar formulário: {str(e)}")
+        flash('Erro ao carregar formulário', 'error')
+        return redirect(url_for('index'))

@@ -145,7 +145,10 @@
         <h2>Novo Registro</h2>
         <form id="form-registro" method="post">
             <div class="form-group">
-                <label for="funcionario_id">Funcionário*</label>
+                <label for="funcionario_id" class="tooltip">
+                    Funcionário*
+                    <span class="tooltip-text">Selecione o funcionário para registrar as horas</span>
+                </label>
                 <select name="funcionario_id" id="funcionario_id" class="form-control" required>
                     <option value="">Selecione</option>
                     {% for f in funcionarios %}
@@ -155,20 +158,29 @@
             </div>
 
             <div class="form-group">
-                <label for="data_trabalho">Data*</label>
+                <label for="data_trabalho" class="tooltip">
+                    Data*
+                    <span class="tooltip-text">Data em que as horas foram trabalhadas</span>
+                </label>
                 <input type="date" id="data_trabalho" name="data_trabalho" class="form-control" required>
             </div>
 
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_entrada">Hora Entrada*</label>
+                        <label for="hora_entrada" class="tooltip">
+                            Hora Entrada*
+                            <span class="tooltip-text">Horário em que o funcionário iniciou o trabalho</span>
+                        </label>
                         <input type="time" id="hora_entrada" name="hora_entrada" class="form-control" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_saida">Hora Saída*</label>
+                        <label for="hora_saida" class="tooltip">
+                            Hora Saída*
+                            <span class="tooltip-text">Horário em que o funcionário encerrou o trabalho</span>
+                        </label>
                         <input type="time" id="hora_saida" name="hora_saida" class="form-control" required>
                     </div>
                 </div>
@@ -177,39 +189,58 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_saida">Saída Almoço</label>
+                        <label for="hora_almoco_saida" class="tooltip">
+                            Saída Almoço
+                            <span class="tooltip-text">Horário em que o funcionário saiu para o almoço</span>
+                        </label>
                         <input type="time" id="hora_almoco_saida" name="hora_almoco_saida" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_volta">Volta Almoço</label>
+                        <label for="hora_almoco_volta" class="tooltip">
+                            Volta Almoço
+                            <span class="tooltip-text">Horário em que o funcionário retornou do almoço</span>
+                        </label>
                         <input type="time" id="hora_almoco_volta" name="hora_almoco_volta" class="form-control">
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="observacoes">Observações</label>
+                <label for="observacoes" class="tooltip">
+                    Observações
+                    <span class="tooltip-text">Informações adicionais sobre o registro de horas</span>
+                </label>
                 <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
             </div>
 
             <div class="resultado-card">
                 <div class="row">
                     <div class="col-md-4">
-                        <p><strong>Horas Normais:</strong> <span id="horas_normais">0.00</span></p>
+                        <p class="tooltip">
+                            <strong>Horas Normais:</strong> <span id="horas_normais">0.00</span>
+                            <span class="tooltip-text">Total de horas trabalhadas dentro da jornada normal</span>
+                        </p>
                     </div>
                     <div class="col-md-4">
-                        <p><strong>Horas Extras:</strong> <span id="horas_extras">0.00</span></p>
+                        <p class="tooltip">
+                            <strong>Horas Extras:</strong> <span id="horas_extras">0.00</span>
+                            <span class="tooltip-text">Total de horas trabalhadas além da jornada normal</span>
+                        </p>
                     </div>
                     <div class="col-md-4">
-                        <p><strong>Adicional Noturno:</strong> <span id="adicional_noturno">0.00</span></p>
+                        <p class="tooltip">
+                            <strong>Adicional Noturno:</strong> <span id="adicional_noturno">0.00</span>
+                            <span class="tooltip-text">Total de horas trabalhadas no período noturno (22h às 5h)</span>
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary tooltip">
                 <i class="fas fa-save me-2"></i>Salvar Registro
+                <span class="tooltip-text">Clique para salvar o registro de horas</span>
             </button>
         </form>
     </div>

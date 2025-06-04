@@ -31,3 +31,9 @@ try:
 except Exception as e:
     logger.error(f"Erro ao conectar com o Supabase: {str(e)}")
     raise
+
+def get_supabase_data(response):
+    """Função utilitária para extrair dados da resposta do Supabase"""
+    if isinstance(response, dict):
+        return response.get('data', [])
+    return response.data if hasattr(response, 'data') else []

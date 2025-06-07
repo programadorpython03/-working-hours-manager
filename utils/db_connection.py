@@ -21,14 +21,6 @@ def log_supabase_response(func):
             raise
     return wrapper
 
-class SupabaseClient:
-    def __init__(self, url, key):
-        self.client = create_client(url, key)
-        
-    @log_supabase_response
-    def table(self, name):
-        return self.client.table(name)
-
 try:
     # Validação das variáveis de ambiente
     if not Config.SUPABASE_URL:
@@ -42,9 +34,9 @@ try:
     logger.info("Tentando conectar ao Supabase...")
     
     # Criação do cliente Supabase com tratamento de erro
-    supabase = SupabaseClient(
-        url=Config.SUPABASE_URL,
-        key=Config.SUPABASE_KEY
+    supabase = create_client(
+        supabase_url=Config.SUPABASE_URL,
+        supabase_key=Config.SUPABASE_KEY
     )
     
     # Teste de conexão

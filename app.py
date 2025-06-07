@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import io
 import csv
 import os
+import traceback
 
 # Configuração do logging
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +24,11 @@ missing_vars = [var for var in required_env_vars if not os.getenv(var)]
 if missing_vars:
     logger.error(f"Variáveis de ambiente ausentes: {', '.join(missing_vars)}")
     raise EnvironmentError(f"Variáveis de ambiente necessárias não configuradas: {', '.join(missing_vars)}")
+
+# Log das variáveis de ambiente (sem mostrar valores sensíveis)
+logger.info(f"SUPABASE_URL configurada: {'Sim' if os.getenv('SUPABASE_URL') else 'Não'}")
+logger.info(f"SUPABASE_KEY configurada: {'Sim' if os.getenv('SUPABASE_KEY') else 'Não'}")
+logger.info(f"SECRET_KEY configurada: {'Sim' if os.getenv('SECRET_KEY') else 'Não'}")
 
 # Blueprints
 app.register_blueprint(funcionarios_bp, url_prefix='/funcionarios')
@@ -213,11 +219,14 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def internal_server_error(e):
+    error_msg = f"Erro interno do servidor: {str(e)}\n{traceback.format_exc()}"
+    logger.error(error_msg)
     return render_template('500.html'), 500
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    logger.error(f"Erro não tratado: {str(e)}")
+    error_msg = f"Erro não tratado: {str(e)}\n{traceback.format_exc()}"
+    logger.error(error_msg)
     return render_template('500.html'), 500
 
 if __name__ == '__main__':

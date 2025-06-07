@@ -244,10 +244,20 @@
         </div>
     </div>
 
-    <!-- Gráfico de Horas -->
-    <div class="chart-container">
-        <h2>Horas Trabalhadas por Mês</h2>
-        <canvas id="horasChart"></canvas>
+    <!-- Gráficos -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h2>Horas Trabalhadas por Dia</h2>
+                <canvas id="horasChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h2>Comparativo Mensal</h2>
+                <canvas id="mensalChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <!-- Registros Recentes -->
@@ -267,8 +277,8 @@
                 <tbody>
                     {% for registro in registros_recentes %}
                     <tr>
-                        <td>{{ registro.data.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ registro.funcionario }}</td>
+                        <td>{{ registro.data_trabalho.strftime('%d/%m/%Y') if registro.data_trabalho else '-' }}</td>
+                        <td>{{ registro.funcionarios.nome if registro.funcionarios else '-' }}</td>
                         <td>{{ registro.horas_normais }}h</td>
                         <td>
                             {% if registro.horas_extras > 0 %}
@@ -297,7 +307,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Configuração do gráfico
+    // Configuração do gráfico diário
     const ctx = document.getElementById('horasChart').getContext('2d');
     const chart = new Chart(ctx, {
         type: 'bar',
@@ -356,6 +366,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Configuração do gráfico mensal
+    const ctxMensal = document.getElementById('mensalChart').getContext('2d');
+    const chartMensal = new Chart(ctxMensal, {
+        type: 'line',
+        data: {
+            labels: {{ grafico_mensal.labels | tojson }},
+            datasets: [{
+                label: 'Horas Normais',
+                data: {{ grafico_mensal.horas_normais | tojson }},
+                borderColor: 'rgba(52, 152, 219, 1)',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Horas Extras',
+                data: {{ grafico_mensal.horas_extras | tojson }},
+                borderColor: 'rgba(241, 196, 15, 1)',
+                backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Adicional Noturno',
+                data: {{ grafico_mensal.adicional_noturno | tojson }},
+                borderColor: 'rgba(155, 89, 182, 1)',
+                backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Horas'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(2) + 'h';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
     // Manipulação do formulário de filtros
     const filterForm = document.getElementById('filter-form');
     filterForm.addEventListener('submit', function(e) {
@@ -369,28 +441,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Faz a requisição
         fetch(`${window.location.pathname}?${params.toString()}`)
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor');
+                }
+                return response.text();
+            })
             .then(html => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
                 // Atualiza os cards de estatísticas
+                const statValues = doc.querySelectorAll('.stat-card .value');
                 document.querySelectorAll('.stat-card .value').forEach((el, index) => {
-                    const newValue = doc.querySelectorAll('.stat-card .value')[index].textContent;
-                    el.textContent = newValue;
+                    if (statValues[index]) {
+                        el.textContent = statValues[index].textContent;
+                    }
                 });
 
                 // Atualiza a tabela de registros recentes
                 const newTable = doc.querySelector('.table tbody');
-                document.querySelector('.table tbody').innerHTML = newTable.innerHTML;
+                if (newTable) {
+                    document.querySelector('.table tbody').innerHTML = newTable.innerHTML;
+                }
 
-                // Atualiza o gráfico
-                const newData = JSON.parse(doc.querySelector('#horasChart').dataset.chart);
-                chart.data.labels = newData.labels;
-                chart.data.datasets.forEach((dataset, index) => {
-                    dataset.data = newData.datasets[index].data;
-                });
-                chart.update();
+                // Atualiza os gráficos
+                const scriptContent = doc.querySelector('script').textContent;
+                
+                // Atualiza gráfico diário
+                const chartDataMatch = scriptContent.match(/data: ({[\s\S]*?})/);
+                if (chartDataMatch) {
+                    try {
+                        const chartData = JSON.parse(chartDataMatch[1]);
+                        chart.data.labels = chartData.labels;
+                        chart.data.datasets.forEach((dataset, index) => {
+                            if (chartData.datasets[index]) {
+                                dataset.data = chartData.datasets[index].data;
+                            }
+                        });
+                        chart.update();
+                    } catch (error) {
+                        console.error('Erro ao atualizar dados do gráfico diário:', error);
+                    }
+                }
+
+                // Atualiza gráfico mensal
+                const mensalDataMatch = scriptContent.match(/grafico_mensal: ({[\s\S]*?})/);
+                if (mensalDataMatch) {
+                    try {
+                        const mensalData = JSON.parse(mensalDataMatch[1]);
+                        chartMensal.data.labels = mensalData.labels;
+                        chartMensal.data.datasets.forEach((dataset, index) => {
+                            if (mensalData.datasets[index]) {
+                                dataset.data = mensalData.datasets[index].data;
+                            }
+                        });
+                        chartMensal.update();
+                    } catch (error) {
+                        console.error('Erro ao atualizar dados do gráfico mensal:', error);
+                    }
+                }
 
                 // Remove o estado de loading
                 form.classList.remove('loading');

@@ -62,7 +62,6 @@ def index():
         # Obtém os registros do mês
         try:
             response = query.execute()
-            logger.debug(f"Resposta da query de registros: {type(response)}")
             registros = get_supabase_data(response)
             if not isinstance(registros, list):
                 logger.warning(f"Registros não é uma lista: {type(registros)}")
@@ -79,7 +78,6 @@ def index():
         # Obtém funcionários ativos
         try:
             response = supabase.table('funcionarios').select('*').eq('ativo', True).execute()
-            logger.debug(f"Resposta da query de funcionários: {type(response)}")
             funcionarios = get_supabase_data(response)
             if not isinstance(funcionarios, list):
                 logger.warning(f"Funcionários não é uma lista: {type(funcionarios)}")
@@ -94,17 +92,22 @@ def index():
         # Obtém registros recentes (últimos 5)
         try:
             response = supabase.table('registros_horas').select('*, funcionarios(nome)').order('data_trabalho', desc=True).limit(5).execute()
-            logger.debug(f"Resposta da query de registros recentes: {type(response)}")
             registros_recentes = get_supabase_data(response)
             if not isinstance(registros_recentes, list):
                 logger.warning(f"Registros recentes não é uma lista: {type(registros_recentes)}")
                 registros_recentes = []
+            
+            # Processa as datas dos registros recentes
+            for registro in registros_recentes:
+                if isinstance(registro.get('data_trabalho'), str):
+                    registro['data_trabalho'] = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
+            
             logger.info(f"Registros recentes encontrados: {len(registros_recentes)}")
         except Exception as e:
             logger.error(f"Erro ao buscar registros recentes: {str(e)}")
             registros_recentes = []
         
-        # Prepara dados para o gráfico
+        # Prepara dados para o gráfico diário
         dias_mes = [datetime(mes_dt.year, mes_dt.month, dia) for dia in range(1, (mes_dt.replace(day=28) + timedelta(days=4)).day + 1)]
         grafico_data = {
             'labels': [dia.strftime('%d/%m') for dia in dias_mes],
@@ -130,7 +133,7 @@ def index():
             registros_por_dia[data_trabalho]['horas_extras'] += float(registro.get('horas_extras', 0) or 0)
             registros_por_dia[data_trabalho]['adicional_noturno'] += float(registro.get('adicional_noturno', 0) or 0)
         
-        # Preenche dados do gráfico
+        # Preenche dados do gráfico diário
         for dia in dias_mes:
             data_str = dia.strftime('%Y-%m-%d')
             if data_str in registros_por_dia:
@@ -141,6 +144,53 @@ def index():
                 grafico_data['horas_normais'].append(0)
                 grafico_data['horas_extras'].append(0)
                 grafico_data['adicional_noturno'].append(0)
+
+        # Prepara dados para o gráfico mensal comparativo
+        meses_comparativos = []
+        for i in range(5, -1, -1):  # Últimos 6 meses
+            mes_comparativo = mes_dt - timedelta(days=30*i)
+            meses_comparativos.append(mes_comparativo)
+
+        grafico_mensal = {
+            'labels': [mes.strftime('%m/%Y') for mes in meses_comparativos],
+            'horas_normais': [],
+            'horas_extras': [],
+            'adicional_noturno': []
+        }
+
+        # Busca dados dos meses anteriores
+        for mes_ref in meses_comparativos:
+            primeiro_dia_mes = f"{mes_ref.year}-{mes_ref.month:02d}-01"
+            if mes_ref.month == 12:
+                ultimo_dia_mes = f"{mes_ref.year + 1}-01-01"
+            else:
+                ultimo_dia_mes = f"{mes_ref.year}-{mes_ref.month + 1:02d}-01"
+
+            try:
+                query_mes = supabase.table('registros_horas').select('*')
+                query_mes = query_mes.gte('data_trabalho', primeiro_dia_mes).lt('data_trabalho', ultimo_dia_mes)
+                if funcionario_id:
+                    query_mes = query_mes.eq('funcionario_id', funcionario_id)
+                
+                response = query_mes.execute()
+                registros_mes = get_supabase_data(response)
+                
+                if isinstance(registros_mes, list):
+                    total_normais = sum(float(r.get('horas_normais', 0) or 0) for r in registros_mes)
+                    total_extras = sum(float(r.get('horas_extras', 0) or 0) for r in registros_mes)
+                    total_noturno = sum(float(r.get('adicional_noturno', 0) or 0) for r in registros_mes)
+                else:
+                    total_normais = total_extras = total_noturno = 0
+                
+                grafico_mensal['horas_normais'].append(total_normais)
+                grafico_mensal['horas_extras'].append(total_extras)
+                grafico_mensal['adicional_noturno'].append(total_noturno)
+                
+            except Exception as e:
+                logger.error(f"Erro ao buscar dados do mês {mes_ref}: {str(e)}")
+                grafico_mensal['horas_normais'].append(0)
+                grafico_mensal['horas_extras'].append(0)
+                grafico_mensal['adicional_noturno'].append(0)
         
         logger.info("Dashboard carregado com sucesso")
         return render_template('index.html',
@@ -149,6 +199,7 @@ def index():
                              total_horas_extras=total_horas_extras,
                              registros_recentes=registros_recentes,
                              grafico_data=grafico_data,
+                             grafico_mensal=grafico_mensal,
                              funcionarios=funcionarios,
                              mes_atual=mes,
                              funcionario_id=funcionario_id)

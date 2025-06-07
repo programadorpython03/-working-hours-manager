@@ -35,92 +35,102 @@ function converterHora(str) {
     document.getElementById(id).addEventListener('change', calcular);
   });
   
-  // Função para calcular as horas trabalhadas
-  function calcularHoras() {
-    // Obtém os valores dos campos
-    const entrada = document.getElementById('hora_entrada').value;
-    const saida = document.getElementById('hora_saida').value;
-    const almocoSaida = document.getElementById('hora_almoco_saida').value;
-    const almocoVolta = document.getElementById('hora_almoco_volta').value;
-
-    // Verifica se os campos obrigatórios estão preenchidos
-    if (!entrada || !saida) {
-        document.getElementById('resultado-calc').style.display = 'none';
-        return;
-    }
-
-    // Converte os horários para minutos
-    let entradaMin = converterParaMinutos(entrada);
-    let saidaMin = converterParaMinutos(saida);
-    let almocoSaidaMin = almocoSaida ? converterParaMinutos(almocoSaida) : null;
-    let almocoVoltaMin = almocoVolta ? converterParaMinutos(almocoVolta) : null;
-
-    // Ajusta a hora de saída se for menor que a entrada (trabalho após meia-noite)
-    if (saidaMin < entradaMin) {
-        saidaMin += 24 * 60; // Adiciona 24 horas em minutos
-    }
-
-    // Calcula o tempo total de trabalho
-    let tempoTotal = saidaMin - entradaMin;
-
-    // Subtrai o tempo de almoço se informado
-    if (almocoSaidaMin && almocoVoltaMin) {
-        // Ajusta a hora de volta do almoço se for menor que a saída
-        if (almocoVoltaMin < almocoSaidaMin) {
-            almocoVoltaMin += 24 * 60;
-        }
-        tempoTotal -= (almocoVoltaMin - almocoSaidaMin);
-    }
-
-    // Calcula as horas normais (até 8 horas)
-    const horasNormais = Math.min(tempoTotal / 60, 8);
-    
-    // Calcula as horas extras (acima de 8 horas)
-    const horasExtras = Math.max(0, tempoTotal / 60 - 8);
-
-    // Calcula o adicional noturno (entre 22h e 5h)
-    let adicionalNoturno = 0;
-    const horaInicioNoturno = 22 * 60; // 22:00 em minutos
-    const horaFimNoturno = 5 * 60; // 05:00 em minutos
-
-    // Ajusta o cálculo para trabalho após meia-noite
-    if (saidaMin > 24 * 60) {
-        // Período noturno antes da meia-noite
-        if (entradaMin < horaFimNoturno) {
-            adicionalNoturno += horaFimNoturno - entradaMin;
-        }
-        // Período noturno após a meia-noite
-        if (saidaMin > 24 * 60 + horaInicioNoturno) {
-            adicionalNoturno += saidaMin - (24 * 60 + horaInicioNoturno);
-        }
-    } else {
-        // Período noturno normal
-        if (entradaMin < horaFimNoturno) {
-            adicionalNoturno += horaFimNoturno - entradaMin;
-        }
-        if (saidaMin > horaInicioNoturno) {
-            adicionalNoturno += saidaMin - horaInicioNoturno;
-        }
-    }
-
-    // Converte o adicional noturno para horas
-    adicionalNoturno = adicionalNoturno / 60;
-
-    // Atualiza os resultados na tela
-    document.getElementById('horas_normais').textContent = horasNormais.toFixed(2);
-    document.getElementById('horas_extras').textContent = horasExtras.toFixed(2);
-    document.getElementById('adicional_noturno').textContent = adicionalNoturno.toFixed(2);
-    document.getElementById('resultado-calc').style.display = 'block';
-}
-
-// Função auxiliar para converter horário para minutos
-function converterParaMinutos(horario) {
+  // Função para converter horário para minutos
+  function converterParaMinutos(horario) {
+    if (!horario) return null;
     const [hora, minuto] = horario.split(':').map(Number);
     return hora * 60 + minuto;
-}
+  }
+  
+  // Função para calcular as horas trabalhadas
+  function calcularHoras() {
+    try {
+        // Obtém os valores dos campos
+        const entrada = document.getElementById('hora_entrada')?.value;
+        const saida = document.getElementById('hora_saida')?.value;
+        const almocoSaida = document.getElementById('hora_almoco_saida')?.value;
+        const almocoVolta = document.getElementById('hora_almoco_volta')?.value;
 
-// Adiciona os event listeners quando o documento estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
+        // Verifica se os campos obrigatórios estão preenchidos
+        if (!entrada || !saida) {
+            document.getElementById('horas_normais').textContent = '0.00';
+            document.getElementById('horas_extras').textContent = '0.00';
+            document.getElementById('adicional_noturno').textContent = '0.00';
+            return;
+        }
+
+        // Converte os horários para minutos
+        let entradaMin = converterParaMinutos(entrada);
+        let saidaMin = converterParaMinutos(saida);
+        let almocoSaidaMin = almocoSaida ? converterParaMinutos(almocoSaida) : null;
+        let almocoVoltaMin = almocoVolta ? converterParaMinutos(almocoVolta) : null;
+
+        // Ajusta a hora de saída se for menor que a entrada (trabalho após meia-noite)
+        if (saidaMin < entradaMin) {
+            saidaMin += 24 * 60; // Adiciona 24 horas em minutos
+        }
+
+        // Calcula o tempo total de trabalho
+        let tempoTotal = saidaMin - entradaMin;
+
+        // Subtrai o tempo de almoço se informado
+        if (almocoSaidaMin && almocoVoltaMin) {
+            // Ajusta a hora de volta do almoço se for menor que a saída
+            if (almocoVoltaMin < almocoSaidaMin) {
+                almocoVoltaMin += 24 * 60;
+            }
+            tempoTotal -= (almocoVoltaMin - almocoSaidaMin);
+        }
+
+        // Calcula as horas normais (até 8 horas)
+        const horasNormais = Math.min(tempoTotal / 60, 8);
+        
+        // Calcula as horas extras (acima de 8 horas)
+        const horasExtras = Math.max(0, tempoTotal / 60 - 8);
+
+        // Calcula o adicional noturno (entre 22h e 5h)
+        let adicionalNoturno = 0;
+        const horaInicioNoturno = 22 * 60; // 22:00 em minutos
+        const horaFimNoturno = 5 * 60; // 05:00 em minutos
+
+        // Ajusta o cálculo para trabalho após meia-noite
+        if (saidaMin > 24 * 60) {
+            // Período noturno antes da meia-noite
+            if (entradaMin < horaFimNoturno) {
+                adicionalNoturno += horaFimNoturno - entradaMin;
+            }
+            // Período noturno após a meia-noite
+            if (saidaMin > 24 * 60 + horaInicioNoturno) {
+                adicionalNoturno += saidaMin - (24 * 60 + horaInicioNoturno);
+            }
+        } else {
+            // Período noturno normal
+            if (entradaMin < horaFimNoturno) {
+                adicionalNoturno += horaFimNoturno - entradaMin;
+            }
+            if (saidaMin > horaInicioNoturno) {
+                adicionalNoturno += saidaMin - horaInicioNoturno;
+            }
+        }
+
+        // Converte o adicional noturno para horas
+        adicionalNoturno = adicionalNoturno / 60;
+
+        // Atualiza os resultados na tela
+        document.getElementById('horas_normais').textContent = horasNormais.toFixed(2);
+        document.getElementById('horas_extras').textContent = horasExtras.toFixed(2);
+        document.getElementById('adicional_noturno').textContent = adicionalNoturno.toFixed(2);
+    } catch (error) {
+        console.error('Erro ao calcular horas:', error);
+        // Em caso de erro, zera os valores
+        document.getElementById('horas_normais').textContent = '0.00';
+        document.getElementById('horas_extras').textContent = '0.00';
+        document.getElementById('adicional_noturno').textContent = '0.00';
+    }
+  }
+  
+  // Adiciona os event listeners quando o documento estiver pronto
+  document.addEventListener('DOMContentLoaded', function() {
     // Campos que devem acionar o cálculo
     const campos = ['hora_entrada', 'hora_saida', 'hora_almoco_saida', 'hora_almoco_volta'];
     
@@ -129,10 +139,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const elemento = document.getElementById(campo);
         if (elemento) {
             elemento.addEventListener('change', calcularHoras);
+            elemento.addEventListener('input', calcularHoras);
         }
     });
 
     // Calcula as horas iniciais se houver dados
     calcularHoras();
-});
+  });
   

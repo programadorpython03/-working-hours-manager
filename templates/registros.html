@@ -2,139 +2,7 @@
 {% block title %}Registro de Horas{% endblock %}
 
 {% block extra_css %}
-<style>
-.content-card {
-    background: white;
-    border-radius: 10px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 2rem;
-}
-
-.content-card h2 {
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--secondary-color);
-    font-weight: 500;
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #dee2e6;
-    border-radius: 0.5rem;
-    transition: border-color 0.2s;
-}
-
-.form-control:focus {
-    border-color: var(--accent-color);
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
-}
-
-.btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.btn-primary {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #2980b9;
-    border-color: #2980b9;
-    transform: translateY(-1px);
-}
-
-.resultado-card {
-    background-color: var(--light-bg);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.resultado-card p {
-    margin-bottom: 0.5rem;
-    color: var(--secondary-color);
-}
-
-.resultado-card strong {
-    color: var(--primary-color);
-}
-
-.resultado-card span {
-    font-weight: 600;
-    color: var(--accent-color);
-}
-
-.table {
-    width: 100%;
-    margin-bottom: 0;
-}
-
-.table th {
-    background-color: var(--light-bg);
-    color: var(--secondary-color);
-    font-weight: 600;
-    padding: 1rem;
-}
-
-.table td {
-    padding: 1rem;
-    vertical-align: middle;
-}
-
-.table tbody tr:hover {
-    background-color: rgba(52, 152, 219, 0.05);
-}
-
-.badge {
-    padding: 0.5em 1em;
-    border-radius: 0.5rem;
-    font-weight: 500;
-}
-
-.badge-warning {
-    background-color: var(--warning-color);
-    color: white;
-}
-
-.badge-info {
-    background-color: var(--accent-color);
-    color: white;
-}
-
-.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-}
-
-.btn-danger {
-    background-color: var(--danger-color);
-    border-color: var(--danger-color);
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c0392b;
-    border-color: #c0392b;
-    transform: translateY(-1px);
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -143,24 +11,24 @@
 
     <div class="content-card">
         <h2>Novo Registro</h2>
-        <form id="form-registro" method="post">
+        <form id="form-registro" method="post" action="{{ url_for('registros.registros') }}">
             <div class="form-group">
-                <label for="funcionario_id" class="tooltip">
+                <label for="funcionario_id">
                     Funcionário*
-                    <span class="tooltip-text">Selecione o funcionário para registrar as horas</span>
                 </label>
                 <select name="funcionario_id" id="funcionario_id" class="form-control" required>
-                    <option value="">Selecione</option>
-                    {% for f in funcionarios %}
-                    <option value="{{ f.id }}">{{ f.nome }}</option>
-                    {% endfor %}
+                    <option value="">Selecione um funcionário</option>
+                    {% if funcionarios %}
+                        {% for f in funcionarios %}
+                        <option value="{{ f.id }}">{{ f.nome }}</option>
+                        {% endfor %}
+                    {% endif %}
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="data_trabalho" class="tooltip">
+                <label for="data_trabalho">
                     Data*
-                    <span class="tooltip-text">Data em que as horas foram trabalhadas</span>
                 </label>
                 <input type="date" id="data_trabalho" name="data_trabalho" class="form-control" required>
             </div>
@@ -168,18 +36,16 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_entrada" class="tooltip">
+                        <label for="hora_entrada">
                             Hora Entrada*
-                            <span class="tooltip-text">Horário em que o funcionário iniciou o trabalho</span>
                         </label>
                         <input type="time" id="hora_entrada" name="hora_entrada" class="form-control" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_saida" class="tooltip">
+                        <label for="hora_saida">
                             Hora Saída*
-                            <span class="tooltip-text">Horário em que o funcionário encerrou o trabalho</span>
                         </label>
                         <input type="time" id="hora_saida" name="hora_saida" class="form-control" required>
                     </div>
@@ -189,18 +55,16 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_saida" class="tooltip">
+                        <label for="hora_almoco_saida">
                             Saída Almoço
-                            <span class="tooltip-text">Horário em que o funcionário saiu para o almoço</span>
                         </label>
                         <input type="time" id="hora_almoco_saida" name="hora_almoco_saida" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_volta" class="tooltip">
+                        <label for="hora_almoco_volta">
                             Volta Almoço
-                            <span class="tooltip-text">Horário em que o funcionário retornou do almoço</span>
                         </label>
                         <input type="time" id="hora_almoco_volta" name="hora_almoco_volta" class="form-control">
                     </div>
@@ -208,9 +72,8 @@
             </div>
 
             <div class="form-group">
-                <label for="observacoes" class="tooltip">
+                <label for="observacoes">
                     Observações
-                    <span class="tooltip-text">Informações adicionais sobre o registro de horas</span>
                 </label>
                 <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
             </div>
@@ -218,29 +81,25 @@
             <div class="resultado-card">
                 <div class="row">
                     <div class="col-md-4">
-                        <p class="tooltip">
+                        <p>
                             <strong>Horas Normais:</strong> <span id="horas_normais">0.00</span>
-                            <span class="tooltip-text">Total de horas trabalhadas dentro da jornada normal</span>
                         </p>
                     </div>
                     <div class="col-md-4">
-                        <p class="tooltip">
+                        <p>
                             <strong>Horas Extras:</strong> <span id="horas_extras">0.00</span>
-                            <span class="tooltip-text">Total de horas trabalhadas além da jornada normal</span>
                         </p>
                     </div>
                     <div class="col-md-4">
-                        <p class="tooltip">
+                        <p>
                             <strong>Adicional Noturno:</strong> <span id="adicional_noturno">0.00</span>
-                            <span class="tooltip-text">Total de horas trabalhadas no período noturno (22h às 5h)</span>
                         </p>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary tooltip">
+            <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save me-2"></i>Salvar Registro
-                <span class="tooltip-text">Clique para salvar o registro de horas</span>
             </button>
         </form>
     </div>
@@ -260,37 +119,43 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for registro in registros %}
-                    <tr>
-                        <td>{{ registro.data.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ registro.funcionario }}</td>
-                        <td>{{ registro.horas_normais }}h</td>
-                        <td>
-                            {% if registro.horas_extras > 0 %}
-                            <span class="badge badge-warning">{{ registro.horas_extras }}h</span>
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if registro.adicional_noturno > 0 %}
-                            <span class="badge badge-info">{{ registro.adicional_noturno }}h</span>
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ url_for('registros.editar_registro', id=registro.id) }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form method="post" action="{{ url_for('registros.excluir', id=registro.id) }}" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este registro?')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                    {% if registros %}
+                        {% for registro in registros %}
+                        <tr>
+                            <td>{{ registro.data.strftime('%d/%m/%Y') if registro.data else '' }}</td>
+                            <td>{{ registro.funcionario.nome if registro.funcionario else '' }}</td>
+                            <td>{{ registro.horas_normais }}h</td>
+                            <td>
+                                {% if registro.horas_extras > 0 %}
+                                <span class="badge badge-warning">{{ registro.horas_extras }}h</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if registro.adicional_noturno > 0 %}
+                                <span class="badge badge-info">{{ registro.adicional_noturno }}h</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('registros.editar_registro', id=registro.id) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="post" action="{{ url_for('registros.excluir', id=registro.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este registro?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">Nenhum registro encontrado</td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>

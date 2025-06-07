@@ -103,18 +103,15 @@ def registros():
             registros_processados = []
             for registro in registros:
                 try:
-                    registros_processados.append({
-                        'id': registro['id'],
-                        'data': datetime.strptime(registro['data_trabalho'], '%Y-%m-%d'),
-                        'funcionario': registro['funcionarios']['nome'],
-                        'hora_entrada': datetime.strptime(registro['hora_entrada'], '%H:%M').time() if registro['hora_entrada'] else None,
-                        'hora_almoco_saida': datetime.strptime(registro['hora_almoco_saida'], '%H:%M').time() if registro['hora_almoco_saida'] else None,
-                        'hora_almoco_volta': datetime.strptime(registro['hora_almoco_volta'], '%H:%M').time() if registro['hora_almoco_volta'] else None,
-                        'hora_saida': datetime.strptime(registro['hora_saida'], '%H:%M').time() if registro['hora_saida'] else None,
-                        'horas_normais': registro['horas_normais'],
-                        'horas_extras': registro['horas_extras'],
-                        'adicional_noturno': registro['adicional_noturno']
-                    })
+                    registro_processado = {
+                        'id': registro.get('id', ''),
+                        'data': datetime.strptime(registro.get('data_trabalho', ''), '%Y-%m-%d') if registro.get('data_trabalho') else None,
+                        'funcionario': registro.get('funcionarios', {}).get('nome', '') if registro.get('funcionarios') else '',
+                        'horas_normais': registro.get('horas_normais', 0),
+                        'horas_extras': registro.get('horas_extras', 0),
+                        'adicional_noturno': registro.get('adicional_noturno', 0)
+                    }
+                    registros_processados.append(registro_processado)
                 except Exception as e:
                     logger.error(f"Erro ao processar registro: {str(e)}")
                     continue

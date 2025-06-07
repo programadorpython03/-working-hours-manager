@@ -1,6 +1,59 @@
 {% extends 'base.html' %}
 {% block title %}Editar Registro de Horas{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    .invalid-feedback {
+        display: none;
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .is-invalid ~ .invalid-feedback {
+        display: block;
+    }
+    .resultado-calc {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .resultado-calc p {
+        margin-bottom: 0.5rem;
+    }
+    .resultado-calc strong {
+        color: #495057;
+    }
+    .btn-save {
+        position: relative;
+    }
+    .btn-save.loading {
+        pointer-events: none;
+        opacity: 0.8;
+    }
+    .btn-save.loading::after {
+        content: '';
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        top: 50%;
+        left: 50%;
+        margin: -0.5rem 0 0 -0.5rem;
+        border: 2px solid #fff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
@@ -9,7 +62,7 @@
 
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <form method="post">
+                    <form id="form-editar" method="post" novalidate>
                         <div class="mb-3">
                             <label for="funcionario_id" class="form-label">Funcionário</label>
                             <select name="funcionario_id" id="funcionario_id" class="form-select" required>
@@ -18,21 +71,25 @@
                                 <option value="{{ f.id }}" {% if f.id == registro.funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
                                 {% endfor %}
                             </select>
+                            <div class="invalid-feedback">Por favor, selecione um funcionário.</div>
                         </div>
 
                         <div class="mb-3">
                             <label for="data_trabalho" class="form-label">Data</label>
                             <input type="date" id="data_trabalho" name="data_trabalho" class="form-control" value="{{ registro.data_trabalho }}" required>
+                            <div class="invalid-feedback">Por favor, selecione uma data válida.</div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="hora_entrada" class="form-label">Hora Entrada</label>
                                 <input type="time" id="hora_entrada" name="hora_entrada" class="form-control" value="{{ registro.hora_entrada }}" required>
+                                <div class="invalid-feedback">Por favor, informe a hora de entrada.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="hora_saida" class="form-label">Hora Saída</label>
                                 <input type="time" id="hora_saida" name="hora_saida" class="form-control" value="{{ registro.hora_saida }}" required>
+                                <div class="invalid-feedback">Por favor, informe a hora de saída.</div>
                             </div>
                         </div>
 
@@ -49,21 +106,19 @@
 
                         <div class="mb-3">
                             <label for="observacoes" class="form-label">Observações</label>
-                            <textarea name="observacoes" id="observacoes" class="form-control">{{ registro.observacoes }}</textarea>
+                            <textarea name="observacoes" id="observacoes" class="form-control" rows="3">{{ registro.observacoes }}</textarea>
                         </div>
 
-                        <div id="resultado-calc" class="card mb-3">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <p class="mb-0"><strong>Horas Normais:</strong> <span id="horas_normais">{{ "%.2f"|format(registro.horas_normais) }}</span></p>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <p class="mb-0"><strong>Horas Extras:</strong> <span id="horas_extras">{{ "%.2f"|format(registro.horas_extras) }}</span></p>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <p class="mb-0"><strong>Adicional Noturno:</strong> <span id="adicional_noturno">{{ "%.2f"|format(registro.adicional_noturno) }}</span></p>
-                                    </div>
+                        <div id="resultado-calc" class="resultado-calc">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class="mb-0"><strong>Horas Normais:</strong> <span id="horas_normais">{{ "%.2f"|format(registro.horas_normais) }}</span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-0"><strong>Horas Extras:</strong> <span id="horas_extras">{{ "%.2f"|format(registro.horas_extras) }}</span></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-0"><strong>Adicional Noturno:</strong> <span id="adicional_noturno">{{ "%.2f"|format(registro.adicional_noturno) }}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -72,7 +127,7 @@
                             <a href="{{ url_for('registros.registros') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Voltar
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary btn-save">
                                 <i class="fas fa-save me-2"></i>Salvar Alterações
                             </button>
                         </div>
@@ -84,4 +139,65 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/registros.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-editar');
+    const btnSave = form.querySelector('.btn-save');
+
+    // Validação do formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!form.checkValidity()) {
+            e.stopPropagation();
+            form.classList.add('was-validated');
+            return;
+        }
+
+        // Validação dos horários
+        const horaEntrada = document.getElementById('hora_entrada').value;
+        const horaSaida = document.getElementById('hora_saida').value;
+        const horaAlmocoSaida = document.getElementById('hora_almoco_saida').value;
+        const horaAlmocoVolta = document.getElementById('hora_almoco_volta').value;
+
+        if (horaAlmocoSaida && horaAlmocoVolta) {
+            if (horaAlmocoSaida >= horaAlmocoVolta) {
+                alert('A hora de saída do almoço deve ser anterior à hora de volta do almoço.');
+                return;
+            }
+        }
+
+        if (horaEntrada >= horaSaida) {
+            alert('A hora de entrada deve ser anterior à hora de saída.');
+            return;
+        }
+
+        // Confirmação antes de salvar
+        if (!confirm('Deseja salvar as alterações?')) {
+            return;
+        }
+
+        // Adiciona classe de loading ao botão
+        btnSave.classList.add('loading');
+        btnSave.disabled = true;
+
+        // Envia o formulário
+        form.submit();
+    });
+
+    // Validação em tempo real dos campos
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    });
+});
+</script>
 {% endblock %} 

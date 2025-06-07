@@ -38,21 +38,44 @@ function converterHora(str) {
   // Função para converter horário para minutos
   function converterParaMinutos(horario) {
     if (!horario) return null;
-    const [hora, minuto] = horario.split(':').map(Number);
-    return hora * 60 + minuto;
+    try {
+        const [hora, minuto] = horario.split(':').map(Number);
+        return hora * 60 + minuto;
+    } catch (error) {
+        console.error('Erro ao converter horário:', error);
+        return null;
+    }
+  }
+  
+  // Função para formatar minutos em horas
+  function formatarHoras(minutos) {
+    if (minutos === null || minutos === undefined) return '00:00';
+    try {
+        const horas = Math.floor(minutos / 60);
+        const mins = Math.round(minutos % 60);
+        return `${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    } catch (error) {
+        console.error('Erro ao formatar horas:', error);
+        return '00:00';
+    }
   }
   
   // Função para calcular as horas trabalhadas
   function calcularHoras() {
     try {
+        console.log('Iniciando cálculo de horas...');
+        
         // Obtém os valores dos campos
         const entrada = document.getElementById('hora_entrada')?.value;
         const saida = document.getElementById('hora_saida')?.value;
         const almocoSaida = document.getElementById('hora_almoco_saida')?.value;
         const almocoVolta = document.getElementById('hora_almoco_volta')?.value;
 
+        console.log('Valores obtidos:', { entrada, saida, almocoSaida, almocoVolta });
+
         // Verifica se os campos obrigatórios estão preenchidos
         if (!entrada || !saida) {
+            console.log('Campos obrigatórios não preenchidos');
             document.getElementById('horas_normais').textContent = '0.00';
             document.getElementById('horas_extras').textContent = '0.00';
             document.getElementById('adicional_noturno').textContent = '0.00';
@@ -65,13 +88,17 @@ function converterHora(str) {
         let almocoSaidaMin = almocoSaida ? converterParaMinutos(almocoSaida) : null;
         let almocoVoltaMin = almocoVolta ? converterParaMinutos(almocoVolta) : null;
 
+        console.log('Horários convertidos para minutos:', { entradaMin, saidaMin, almocoSaidaMin, almocoVoltaMin });
+
         // Ajusta a hora de saída se for menor que a entrada (trabalho após meia-noite)
         if (saidaMin < entradaMin) {
             saidaMin += 24 * 60; // Adiciona 24 horas em minutos
+            console.log('Ajustando hora de saída para o dia seguinte:', saidaMin);
         }
 
         // Calcula o tempo total de trabalho
         let tempoTotal = saidaMin - entradaMin;
+        console.log('Tempo total antes do almoço:', tempoTotal);
 
         // Subtrai o tempo de almoço se informado
         if (almocoSaidaMin && almocoVoltaMin) {
@@ -79,7 +106,10 @@ function converterHora(str) {
             if (almocoVoltaMin < almocoSaidaMin) {
                 almocoVoltaMin += 24 * 60;
             }
-            tempoTotal -= (almocoVoltaMin - almocoSaidaMin);
+            const tempoAlmoco = almocoVoltaMin - almocoSaidaMin;
+            tempoTotal -= tempoAlmoco;
+            console.log('Tempo de almoço:', tempoAlmoco);
+            console.log('Tempo total após almoço:', tempoTotal);
         }
 
         // Calcula as horas normais (até 8 horas)
@@ -116,10 +146,32 @@ function converterHora(str) {
         // Converte o adicional noturno para horas
         adicionalNoturno = adicionalNoturno / 60;
 
+        console.log('Resultados calculados:', {
+            horasNormais,
+            horasExtras,
+            adicionalNoturno
+        });
+
         // Atualiza os resultados na tela
         document.getElementById('horas_normais').textContent = horasNormais.toFixed(2);
         document.getElementById('horas_extras').textContent = horasExtras.toFixed(2);
         document.getElementById('adicional_noturno').textContent = adicionalNoturno.toFixed(2);
+
+        // Validação visual dos campos
+        const campos = ['hora_entrada', 'hora_saida', 'hora_almoco_saida', 'hora_almoco_volta'];
+        campos.forEach(campo => {
+            const elemento = document.getElementById(campo);
+            if (elemento) {
+                if (elemento.value) {
+                    elemento.classList.remove('is-invalid');
+                    elemento.classList.add('is-valid');
+                } else if (campo === 'hora_entrada' || campo === 'hora_saida') {
+                    elemento.classList.remove('is-valid');
+                    elemento.classList.add('is-invalid');
+                }
+            }
+        });
+
     } catch (error) {
         console.error('Erro ao calcular horas:', error);
         // Em caso de erro, zera os valores
@@ -131,6 +183,8 @@ function converterHora(str) {
   
   // Adiciona os event listeners quando o documento estiver pronto
   document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando cálculos de horas...');
+    
     // Campos que devem acionar o cálculo
     const campos = ['hora_entrada', 'hora_saida', 'hora_almoco_saida', 'hora_almoco_volta'];
     
@@ -138,8 +192,11 @@ function converterHora(str) {
     campos.forEach(campo => {
         const elemento = document.getElementById(campo);
         if (elemento) {
+            console.log(`Adicionando listener para o campo ${campo}`);
             elemento.addEventListener('change', calcularHoras);
             elemento.addEventListener('input', calcularHoras);
+        } else {
+            console.warn(`Campo ${campo} não encontrado`);
         }
     });
 

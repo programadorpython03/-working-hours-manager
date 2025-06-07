@@ -155,6 +155,16 @@ def editar_registro(id):
             if not all([hora_entrada, hora_saida]):
                 flash('Horários de entrada e saída são obrigatórios e devem ser válidos', 'error')
                 return redirect(url_for('registros.editar_registro', id=id))
+
+            # Validação adicional dos horários
+            if hora_almoco_saida and hora_almoco_volta:
+                if hora_almoco_saida >= hora_almoco_volta:
+                    flash('A hora de saída do almoço deve ser anterior à hora de volta do almoço', 'error')
+                    return redirect(url_for('registros.editar_registro', id=id))
+
+            if hora_entrada >= hora_saida:
+                flash('A hora de entrada deve ser anterior à hora de saída', 'error')
+                return redirect(url_for('registros.editar_registro', id=id))
             
             # Cálculo das horas
             try:
@@ -169,6 +179,17 @@ def editar_registro(id):
                 flash('Erro ao calcular horas trabalhadas', 'error')
                 return redirect(url_for('registros.editar_registro', id=id))
 
+            # Verifica se o funcionário existe e está ativo
+            try:
+                funcionario = supabase.table('funcionarios').select('*').eq('id', funcionario_id).eq('ativo', True).single().execute()
+                if not funcionario.data:
+                    flash('Funcionário não encontrado ou inativo', 'error')
+                    return redirect(url_for('registros.editar_registro', id=id))
+            except Exception as e:
+                logger.error(f"Erro ao verificar funcionário: {str(e)}")
+                flash('Erro ao verificar funcionário', 'error')
+                return redirect(url_for('registros.editar_registro', id=id))
+
             # Atualização no banco
             try:
                 supabase.table('registros_horas').update({
@@ -181,7 +202,8 @@ def editar_registro(id):
                     "horas_normais": resultado['horas_normais'],
                     "horas_extras": resultado['horas_extras'],
                     "adicional_noturno": resultado['adicional_noturno'],
-                    "observacoes": data.get('observacoes', '').strip()
+                    "observacoes": data.get('observacoes', '').strip(),
+                    "updated_at": datetime.now().isoformat()
                 }).eq('id', id).execute()
                 flash('Registro de horas atualizado com sucesso!', 'success')
                 return redirect(url_for('registros.registros'))
@@ -192,15 +214,20 @@ def editar_registro(id):
 
         # Busca o registro para edição
         try:
+            logger.info(f"Buscando registro com ID: {id}")
             response = supabase.table('registros_horas').select('*, funcionarios(nome)').eq('id', id).single().execute()
-            registro = get_supabase_data(response)
-            if not registro:
+            
+            if not response.data:
+                logger.error(f"Registro não encontrado para o ID: {id}")
                 flash('Registro não encontrado', 'error')
                 return redirect(url_for('registros.registros'))
             
-            registro = registro[0]  # Pega o primeiro item da lista
+            registro = response.data
+            logger.info(f"Registro encontrado: {registro}")
+            
+            # Busca funcionários ativos
             response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
-            funcionarios = get_supabase_data(response)
+            funcionarios = response.data
             
             return render_template('editar_registro.html', 
                                  registro=registro,

@@ -34,179 +34,133 @@ def index():
     try:
         # Obtém os parâmetros de filtro
         mes = request.args.get('mes', datetime.now().strftime('%Y-%m'))
-        funcionario_id = request.args.get('funcionario_id', type=int)
+        funcionario_id = request.args.get('funcionario_id')
         
-        logger.info(f"Carregando dashboard para mês: {mes}, funcionário: {funcionario_id}")
-        
-        # Converte o mês para datetime
+        # Converte a string do mês para objeto datetime
         mes_dt = datetime.strptime(mes, '%Y-%m')
-        
-        # Query base para registros
-        query = supabase.table('registros_horas').select('*')
-        
-        # Filtra por mês e ano
-        primeiro_dia = f"{mes_dt.year}-{mes_dt.month:02d}-01"
+        inicio_mes = mes_dt.replace(day=1)
         if mes_dt.month == 12:
-            ultimo_dia = f"{mes_dt.year + 1}-01-01"
+            fim_mes = mes_dt.replace(year=mes_dt.year + 1, month=1, day=1) - timedelta(days=1)
         else:
-            ultimo_dia = f"{mes_dt.year}-{mes_dt.month + 1:02d}-01"
+            fim_mes = mes_dt.replace(month=mes_dt.month + 1, day=1) - timedelta(days=1)
         
-        logger.debug(f"Período de busca: {primeiro_dia} até {ultimo_dia}")
-        
-        query = query.gte('data_trabalho', primeiro_dia).lt('data_trabalho', ultimo_dia)
-        
-        # Aplica filtro por funcionário se especificado
+        # Busca os registros do mês
+        query = supabase.table('registros_horas').select('*').gte('data_trabalho', inicio_mes.isoformat()).lte('data_trabalho', fim_mes.isoformat())
         if funcionario_id:
             query = query.eq('funcionario_id', funcionario_id)
+        response = query.execute()
+        registros = get_supabase_data(response)
         
-        # Obtém os registros do mês
-        try:
-            response = query.execute()
-            registros = get_supabase_data(response)
-            if not isinstance(registros, list):
-                logger.warning(f"Registros não é uma lista: {type(registros)}")
-                registros = []
-            logger.info(f"Registros encontrados: {len(registros)}")
-        except Exception as e:
-            logger.error(f"Erro ao buscar registros: {str(e)}")
-            registros = []
+        # Busca funcionários ativos
+        response = supabase.table('funcionarios').select('*').eq('ativo', True).execute()
+        funcionarios = get_supabase_data(response)
         
-        # Calcula totais
-        total_horas_extras = sum(float(r.get('horas_extras', 0) or 0) for r in registros)
-        total_registros = len(registros)
+        # Busca registros recentes
+        response = supabase.table('registros_horas').select('*, funcionarios(nome)').order('data_trabalho', desc=True).limit(5).execute()
+        registros_recentes = get_supabase_data(response)
         
-        # Obtém funcionários ativos
-        try:
-            response = supabase.table('funcionarios').select('*').eq('ativo', True).execute()
-            funcionarios = get_supabase_data(response)
-            if not isinstance(funcionarios, list):
-                logger.warning(f"Funcionários não é uma lista: {type(funcionarios)}")
-                funcionarios = []
-            logger.info(f"Funcionários ativos encontrados: {len(funcionarios)}")
-        except Exception as e:
-            logger.error(f"Erro ao buscar funcionários: {str(e)}")
-            funcionarios = []
-        
-        total_funcionarios = len(funcionarios)
-        
-        # Obtém registros recentes (últimos 5)
-        try:
-            response = supabase.table('registros_horas').select('*, funcionarios(nome)').order('data_trabalho', desc=True).limit(5).execute()
-            registros_recentes = get_supabase_data(response)
-            if not isinstance(registros_recentes, list):
-                logger.warning(f"Registros recentes não é uma lista: {type(registros_recentes)}")
-                registros_recentes = []
-            
-            # Processa as datas dos registros recentes
-            for registro in registros_recentes:
-                if isinstance(registro.get('data_trabalho'), str):
-                    registro['data_trabalho'] = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
-            
-            logger.info(f"Registros recentes encontrados: {len(registros_recentes)}")
-        except Exception as e:
-            logger.error(f"Erro ao buscar registros recentes: {str(e)}")
-            registros_recentes = []
+        # Processa as datas dos registros recentes
+        for registro in registros_recentes:
+            if isinstance(registro.get('data_trabalho'), str):
+                registro['data_trabalho'] = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
         
         # Prepara dados para o gráfico diário
-        dias_mes = [datetime(mes_dt.year, mes_dt.month, dia) for dia in range(1, (mes_dt.replace(day=28) + timedelta(days=4)).day + 1)]
-        grafico_data = {
-            'labels': [dia.strftime('%d/%m') for dia in dias_mes],
-            'horas_normais': [],
-            'horas_extras': [],
-            'adicional_noturno': []
-        }
+        dias_no_mes = (fim_mes - inicio_mes).days + 1
+        labels = [(inicio_mes + timedelta(days=i)).strftime('%d/%m') for i in range(dias_no_mes)]
+        horas_normais = [0] * dias_no_mes
+        horas_extras = [0] * dias_no_mes
+        adicional_noturno = [0] * dias_no_mes
         
-        # Agrupa registros por dia
-        registros_por_dia = {}
         for registro in registros:
-            data_trabalho = registro.get('data_trabalho')
-            if not data_trabalho:
-                continue
-                
-            if data_trabalho not in registros_por_dia:
-                registros_por_dia[data_trabalho] = {
-                    'horas_normais': 0,
-                    'horas_extras': 0,
-                    'adicional_noturno': 0
-                }
-            registros_por_dia[data_trabalho]['horas_normais'] += float(registro.get('horas_normais', 0) or 0)
-            registros_por_dia[data_trabalho]['horas_extras'] += float(registro.get('horas_extras', 0) or 0)
-            registros_por_dia[data_trabalho]['adicional_noturno'] += float(registro.get('adicional_noturno', 0) or 0)
-        
-        # Preenche dados do gráfico diário
-        for dia in dias_mes:
-            data_str = dia.strftime('%Y-%m-%d')
-            if data_str in registros_por_dia:
-                grafico_data['horas_normais'].append(registros_por_dia[data_str]['horas_normais'])
-                grafico_data['horas_extras'].append(registros_por_dia[data_str]['horas_extras'])
-                grafico_data['adicional_noturno'].append(registros_por_dia[data_str]['adicional_noturno'])
+            if isinstance(registro.get('data_trabalho'), str):
+                data = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
             else:
-                grafico_data['horas_normais'].append(0)
-                grafico_data['horas_extras'].append(0)
-                grafico_data['adicional_noturno'].append(0)
-
-        # Prepara dados para o gráfico mensal comparativo
-        meses_comparativos = []
-        for i in range(5, -1, -1):  # Últimos 6 meses
-            mes_comparativo = mes_dt - timedelta(days=30*i)
-            meses_comparativos.append(mes_comparativo)
-
-        grafico_mensal = {
-            'labels': [mes.strftime('%m/%Y') for mes in meses_comparativos],
-            'horas_normais': [],
-            'horas_extras': [],
-            'adicional_noturno': []
+                data = registro['data_trabalho']
+            dia_index = (data - inicio_mes).days
+            if 0 <= dia_index < dias_no_mes:
+                horas_normais[dia_index] = registro.get('horas_normais', 0)
+                horas_extras[dia_index] = registro.get('horas_extras', 0)
+                adicional_noturno[dia_index] = registro.get('adicional_noturno', 0)
+        
+        grafico_data = {
+            'labels': labels,
+            'horas_normais': horas_normais,
+            'horas_extras': horas_extras,
+            'adicional_noturno': adicional_noturno
         }
-
-        # Busca dados dos meses anteriores
-        for mes_ref in meses_comparativos:
-            primeiro_dia_mes = f"{mes_ref.year}-{mes_ref.month:02d}-01"
-            if mes_ref.month == 12:
-                ultimo_dia_mes = f"{mes_ref.year + 1}-01-01"
-            else:
-                ultimo_dia_mes = f"{mes_ref.year}-{mes_ref.month + 1:02d}-01"
-
-            try:
-                query_mes = supabase.table('registros_horas').select('*')
-                query_mes = query_mes.gte('data_trabalho', primeiro_dia_mes).lt('data_trabalho', ultimo_dia_mes)
-                if funcionario_id:
-                    query_mes = query_mes.eq('funcionario_id', funcionario_id)
-                
-                response = query_mes.execute()
-                registros_mes = get_supabase_data(response)
-                
-                if isinstance(registros_mes, list):
-                    total_normais = sum(float(r.get('horas_normais', 0) or 0) for r in registros_mes)
-                    total_extras = sum(float(r.get('horas_extras', 0) or 0) for r in registros_mes)
-                    total_noturno = sum(float(r.get('adicional_noturno', 0) or 0) for r in registros_mes)
-                else:
-                    total_normais = total_extras = total_noturno = 0
-                
-                grafico_mensal['horas_normais'].append(total_normais)
-                grafico_mensal['horas_extras'].append(total_extras)
-                grafico_mensal['adicional_noturno'].append(total_noturno)
-                
-            except Exception as e:
-                logger.error(f"Erro ao buscar dados do mês {mes_ref}: {str(e)}")
-                grafico_mensal['horas_normais'].append(0)
-                grafico_mensal['horas_extras'].append(0)
-                grafico_mensal['adicional_noturno'].append(0)
         
-        logger.info("Dashboard carregado com sucesso")
+        # Prepara dados para o gráfico mensal (últimos 6 meses)
+        meses = []
+        horas_normais_mensal = []
+        horas_extras_mensal = []
+        adicional_noturno_mensal = []
+        
+        for i in range(5, -1, -1):
+            data_ref = mes_dt - timedelta(days=30*i)
+            inicio_mes_ref = data_ref.replace(day=1)
+            if data_ref.month == 12:
+                fim_mes_ref = data_ref.replace(year=data_ref.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                fim_mes_ref = data_ref.replace(month=data_ref.month + 1, day=1) - timedelta(days=1)
+            
+            meses.append(data_ref.strftime('%m/%Y'))
+            
+            # Busca registros do mês
+            query = supabase.table('registros_horas').select('*').gte('data_trabalho', inicio_mes_ref.isoformat()).lte('data_trabalho', fim_mes_ref.isoformat())
+            if funcionario_id:
+                query = query.eq('funcionario_id', funcionario_id)
+            response = query.execute()
+            registros_mes = get_supabase_data(response)
+            
+            # Calcula totais
+            total_horas_normais = sum(r.get('horas_normais', 0) for r in registros_mes)
+            total_horas_extras = sum(r.get('horas_extras', 0) for r in registros_mes)
+            total_adicional = sum(r.get('adicional_noturno', 0) for r in registros_mes)
+            
+            horas_normais_mensal.append(total_horas_normais)
+            horas_extras_mensal.append(total_horas_extras)
+            adicional_noturno_mensal.append(total_adicional)
+        
+        grafico_mensal = {
+            'labels': meses,
+            'horas_normais': horas_normais_mensal,
+            'horas_extras': horas_extras_mensal,
+            'adicional_noturno': adicional_noturno_mensal
+        }
+        
+        # Calcula totais
+        total_funcionarios = len(funcionarios)
+        total_registros = len(registros)
+        total_horas_extras = sum(r.get('horas_extras', 0) for r in registros)
+        
+        # Se for uma requisição AJAX, retorna JSON
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'total_funcionarios': total_funcionarios,
+                'total_registros': total_registros,
+                'total_horas_extras': total_horas_extras,
+                'registros_recentes': registros_recentes,
+                'grafico_data': grafico_data,
+                'grafico_mensal': grafico_mensal
+            })
+        
+        # Se não for AJAX, renderiza o template
         return render_template('index.html',
+                             mes_atual=mes,
+                             funcionario_id=funcionario_id,
+                             funcionarios=funcionarios,
                              total_funcionarios=total_funcionarios,
                              total_registros=total_registros,
                              total_horas_extras=total_horas_extras,
                              registros_recentes=registros_recentes,
                              grafico_data=grafico_data,
-                             grafico_mensal=grafico_mensal,
-                             funcionarios=funcionarios,
-                             mes_atual=mes,
-                             funcionario_id=funcionario_id)
+                             grafico_mensal=grafico_mensal)
+                             
     except Exception as e:
-        logger.error(f"Erro não tratado no dashboard: {str(e)}", exc_info=True)
-        flash('Ocorreu um erro ao carregar o dashboard', 'error')
-        return render_template('500.html'), 500
+        app.logger.error(f"Erro ao carregar dashboard: {str(e)}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': 'Erro ao carregar dados'}), 500
+        return render_template('index.html', error="Erro ao carregar dados do dashboard")
 
 @app.route('/notificacoes/nao-lidas')
 def notificacoes_nao_lidas():

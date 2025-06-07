@@ -107,6 +107,10 @@ def registros():
                         'id': registro.get('id', ''),
                         'data': datetime.strptime(registro.get('data_trabalho', ''), '%Y-%m-%d') if registro.get('data_trabalho') else None,
                         'funcionario': registro.get('funcionarios', {}).get('nome', '') if registro.get('funcionarios') else '',
+                        'entrada': datetime.strptime(registro.get('hora_entrada', ''), '%H:%M') if registro.get('hora_entrada') else None,
+                        'saida': datetime.strptime(registro.get('hora_saida', ''), '%H:%M') if registro.get('hora_saida') else None,
+                        'almoco_inicio': datetime.strptime(registro.get('hora_almoco_saida', ''), '%H:%M') if registro.get('hora_almoco_saida') else None,
+                        'almoco_fim': datetime.strptime(registro.get('hora_almoco_volta', ''), '%H:%M') if registro.get('hora_almoco_volta') else None,
                         'horas_normais': registro.get('horas_normais', 0),
                         'horas_extras': registro.get('horas_extras', 0),
                         'adicional_noturno': registro.get('adicional_noturno', 0)

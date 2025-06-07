@@ -1,0 +1,92 @@
+/* Estilos específicos da tela de registros de horas */
+
+/* Tabela de Registros */
+.table-registros {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-registros th {
+    background-color: var(--light-bg);
+    color: var(--secondary-color);
+    font-weight: 600;
+    padding: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.table-registros td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table-registros tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+/* Campos de Horário */
+.time-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    transition: all var(--transition-speed);
+    font-size: 1rem;
+}
+
+.time-input:focus {
+    border-color: var(--accent-color);
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Resumo de Horas */
+.horas-resumo {
+    background-color: var(--light-bg);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: var(--card-shadow);
+}
+
+.horas-resumo h3 {
+    color: var(--secondary-color);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.horas-resumo p {
+    margin: 0.5rem 0;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.horas-resumo span {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Loading */
+.loading {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid var(--light-bg);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+} 

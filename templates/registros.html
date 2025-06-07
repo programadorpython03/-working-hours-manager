@@ -1,53 +1,57 @@
 {% extends 'base.html' %}
-{% block title %}Registro de Horas{% endblock %}
+
+{% block title %}Registros de Horas - Controle de Horas{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/registros.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-    <h1 class="mb-4">Registro de Horas Trabalhadas</h1>
+    <h1 class="mb-4">Registros de Horas</h1>
 
     <div class="content-card">
         <h2>Novo Registro</h2>
-        <form id="form-registro" method="post" action="{{ url_for('registros.registros') }}">
+        <form id="form-registro" method="post">
             <div class="form-group">
-                <label for="funcionario_id">
+                <label for="funcionario_id" class="tooltip">
                     Funcionário*
+                    <span class="tooltip-text">Selecione o funcionário</span>
                 </label>
-                <select name="funcionario_id" id="funcionario_id" class="form-control" required>
+                <select id="funcionario_id" name="funcionario_id" class="form-control" required>
                     <option value="">Selecione um funcionário</option>
-                    {% if funcionarios %}
-                        {% for f in funcionarios %}
-                        <option value="{{ f.id }}">{{ f.nome }}</option>
-                        {% endfor %}
-                    {% endif %}
+                    {% for f in funcionarios %}
+                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                    {% endfor %}
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="data_trabalho">
+                <label for="data" class="tooltip">
                     Data*
+                    <span class="tooltip-text">Data do registro</span>
                 </label>
-                <input type="date" id="data_trabalho" name="data_trabalho" class="form-control" required>
+                <input type="date" id="data" name="data" class="form-control" required>
             </div>
 
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_entrada">
-                            Hora Entrada*
+                        <label for="entrada" class="tooltip">
+                            Entrada*
+                            <span class="tooltip-text">Horário de entrada</span>
                         </label>
-                        <input type="time" id="hora_entrada" name="hora_entrada" class="form-control" required>
+                        <input type="time" id="entrada" name="entrada" class="form-control time-input" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_saida">
-                            Hora Saída*
+                        <label for="saida" class="tooltip">
+                            Saída*
+                            <span class="tooltip-text">Horário de saída</span>
                         </label>
-                        <input type="time" id="hora_saida" name="hora_saida" class="form-control" required>
+                        <input type="time" id="saida" name="saida" class="form-control time-input" required>
                     </div>
                 </div>
             </div>
@@ -55,107 +59,96 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_saida">
-                            Saída Almoço
+                        <label for="almoco_inicio" class="tooltip">
+                            Início do Almoço
+                            <span class="tooltip-text">Horário de início do almoço</span>
                         </label>
-                        <input type="time" id="hora_almoco_saida" name="hora_almoco_saida" class="form-control">
+                        <input type="time" id="almoco_inicio" name="almoco_inicio" class="form-control time-input">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_volta">
-                            Volta Almoço
+                        <label for="almoco_fim" class="tooltip">
+                            Fim do Almoço
+                            <span class="tooltip-text">Horário de fim do almoço</span>
                         </label>
-                        <input type="time" id="hora_almoco_volta" name="hora_almoco_volta" class="form-control">
+                        <input type="time" id="almoco_fim" name="almoco_fim" class="form-control time-input">
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="observacoes">
+                <label for="observacoes" class="tooltip">
                     Observações
+                    <span class="tooltip-text">Observações sobre o registro</span>
                 </label>
-                <textarea name="observacoes" id="observacoes" class="form-control" rows="3"></textarea>
+                <textarea id="observacoes" name="observacoes" class="form-control" rows="3"></textarea>
             </div>
 
-            <div class="resultado-card">
-                <div class="row">
-                    <div class="col-md-4">
-                        <p>
-                            <strong>Horas Normais:</strong> <span id="horas_normais">0.00</span>
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <p>
-                            <strong>Horas Extras:</strong> <span id="horas_extras">0.00</span>
-                        </p>
-                    </div>
-                    <div class="col-md-4">
-                        <p>
-                            <strong>Adicional Noturno:</strong> <span id="adicional_noturno">0.00</span>
-                        </p>
-                    </div>
-                </div>
+            <div class="horas-resumo">
+                <h3>Resumo de Horas</h3>
+                <p>Horas Normais: <span id="horas_normais">00:00</span></p>
+                <p>Horas Extras: <span id="horas_extras">00:00</span></p>
+                <p>Adicional Noturno: <span id="adicional_noturno">00:00</span></p>
             </div>
 
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary tooltip">
                 <i class="fas fa-save me-2"></i>Salvar Registro
+                <span class="tooltip-text">Clique para salvar o registro</span>
             </button>
         </form>
     </div>
 
     <div class="content-card">
-        <h2>Registros do Mês</h2>
+        <h2>Registros Cadastrados</h2>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table table-registros">
                 <thead>
                     <tr>
-                        <th>Data</th>
                         <th>Funcionário</th>
+                        <th>Data</th>
+                        <th>Entrada</th>
+                        <th>Saída</th>
+                        <th>Almoço</th>
                         <th>Horas Normais</th>
                         <th>Horas Extras</th>
-                        <th>Adicional Noturno</th>
+                        <th>Ad. Noturno</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% if registros %}
-                        {% for registro in registros %}
-                        <tr>
-                            <td>{{ registro.data.strftime('%d/%m/%Y') if registro.data else '' }}</td>
-                            <td>{{ registro.funcionario.nome if registro.funcionario else '' }}</td>
-                            <td>{{ registro.horas_normais }}h</td>
-                            <td>
-                                {% if registro.horas_extras > 0 %}
-                                <span class="badge badge-warning">{{ registro.horas_extras }}h</span>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if registro.adicional_noturno > 0 %}
-                                <span class="badge badge-info">{{ registro.adicional_noturno }}h</span>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('registros.editar_registro', id=registro.id) }}" class="btn btn-primary btn-sm">
+                    {% for r in registros %}
+                    <tr>
+                        <td>{{ r.funcionario.nome }}</td>
+                        <td>{{ r.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ r.entrada.strftime('%H:%M') }}</td>
+                        <td>{{ r.saida.strftime('%H:%M') }}</td>
+                        <td>
+                            {% if r.almoco_inicio and r.almoco_fim %}
+                            {{ r.almoco_inicio.strftime('%H:%M') }} - {{ r.almoco_fim.strftime('%H:%M') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ r.horas_normais }}</td>
+                        <td>{{ r.horas_extras }}</td>
+                        <td>{{ r.adicional_noturno }}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('registros.editar_registro', id=r.id) }}" class="btn btn-primary btn-sm tooltip">
                                     <i class="fas fa-edit"></i>
+                                    <span class="tooltip-text">Editar registro</span>
                                 </a>
-                                <form method="post" action="{{ url_for('registros.excluir', id=registro.id) }}" class="d-inline">
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este registro?')">
+                                <form method="post" action="{{ url_for('registros.excluir_registro', id=r.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm tooltip" onclick="return confirmarExclusao('{{ r.id }}')">
                                         <i class="fas fa-trash"></i>
+                                        <span class="tooltip-text">Excluir registro</span>
                                     </button>
                                 </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center">Nenhum registro encontrado</td>
-                        </tr>
-                    {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

@@ -38,20 +38,20 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="entrada" class="tooltip">
+                        <label for="hora_entrada" class="tooltip">
                             Entrada*
                             <span class="tooltip-text">Horário de entrada</span>
                         </label>
-                        <input type="time" id="entrada" name="entrada" class="form-control time-input" required>
+                        <input type="time" id="hora_entrada" name="hora_entrada" class="form-control time-input" required>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="saida" class="tooltip">
+                        <label for="hora_saida" class="tooltip">
                             Saída*
                             <span class="tooltip-text">Horário de saída</span>
                         </label>
-                        <input type="time" id="saida" name="saida" class="form-control time-input" required>
+                        <input type="time" id="hora_saida" name="hora_saida" class="form-control time-input" required>
                     </div>
                 </div>
             </div>
@@ -59,20 +59,20 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="almoco_inicio" class="tooltip">
+                        <label for="hora_almoco_saida" class="tooltip">
                             Início do Almoço
                             <span class="tooltip-text">Horário de início do almoço</span>
                         </label>
-                        <input type="time" id="almoco_inicio" name="almoco_inicio" class="form-control time-input">
+                        <input type="time" id="hora_almoco_saida" name="hora_almoco_saida" class="form-control time-input">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="almoco_fim" class="tooltip">
+                        <label for="hora_almoco_volta" class="tooltip">
                             Fim do Almoço
                             <span class="tooltip-text">Horário de fim do almoço</span>
                         </label>
-                        <input type="time" id="almoco_fim" name="almoco_fim" class="form-control time-input">
+                        <input type="time" id="hora_almoco_volta" name="hora_almoco_volta" class="form-control time-input">
                     </div>
                 </div>
             </div>
@@ -87,15 +87,21 @@
 
             <div class="horas-resumo">
                 <h3>Resumo de Horas</h3>
-                <p>Horas Normais: <span id="horas_normais">00:00</span></p>
-                <p>Horas Extras: <span id="horas_extras">00:00</span></p>
-                <p>Adicional Noturno: <span id="adicional_noturno">00:00</span></p>
+                <p>Horas Normais: <span id="horas_normais">0.00</span></p>
+                <p>Horas Extras: <span id="horas_extras">0.00</span></p>
+                <p>Adicional Noturno: <span id="adicional_noturno">0.00</span></p>
             </div>
 
-            <button type="submit" class="btn btn-primary tooltip">
-                <i class="fas fa-save me-2"></i>Salvar Registro
-                <span class="tooltip-text">Clique para salvar o registro</span>
-            </button>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary tooltip">
+                    <i class="fas fa-save me-2"></i>Salvar Registro
+                    <span class="tooltip-text">Clique para salvar o registro</span>
+                </button>
+                <button type="button" class="btn btn-secondary tooltip" onclick="limparFormulario()">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                    <span class="tooltip-text">Clique para cancelar e limpar o formulário</span>
+                </button>
+            </div>
         </form>
     </div>
 

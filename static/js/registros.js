@@ -31,8 +31,15 @@ function converterHora(str) {
     }
   }
   
-  ["hora_entrada", "hora_almoco_saida", "hora_almoco_volta", "hora_saida"].forEach(id => {
-    document.getElementById(id).addEventListener('change', calcular);
+  // Aguarda o DOM estar completamente carregado
+  document.addEventListener('DOMContentLoaded', function() {
+    // Adiciona os event listeners para os campos
+    ["hora_entrada", "hora_almoco_saida", "hora_almoco_volta", "hora_saida"].forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.addEventListener('change', calcular);
+        }
+    });
   });
   
   // Função para converter horário para minutos
@@ -71,11 +78,19 @@ function converterHora(str) {
         const almocoSaida = document.getElementById('hora_almoco_saida')?.value;
         const almocoVolta = document.getElementById('hora_almoco_volta')?.value;
 
-        console.log('Valores obtidos:', { entrada, saida, almocoSaida, almocoVolta });
+        console.log('Valores obtidos:', { 
+            entrada: entrada || 'vazio', 
+            saida: saida || 'vazio', 
+            almocoSaida: almocoSaida || 'vazio', 
+            almocoVolta: almocoVolta || 'vazio' 
+        });
 
         // Verifica se os campos obrigatórios estão preenchidos
         if (!entrada || !saida) {
-            console.log('Campos obrigatórios não preenchidos');
+            console.log('Campos obrigatórios não preenchidos:', {
+                entrada: entrada ? 'preenchido' : 'vazio',
+                saida: saida ? 'preenchido' : 'vazio'
+            });
             document.getElementById('horas_normais').textContent = '0.00';
             document.getElementById('horas_extras').textContent = '0.00';
             document.getElementById('adicional_noturno').textContent = '0.00';
@@ -203,4 +218,28 @@ function converterHora(str) {
     // Calcula as horas iniciais se houver dados
     calcularHoras();
   });
+  
+  // Função para limpar o formulário
+  function limparFormulario() {
+    // Limpa os campos de horário
+    ["hora_entrada", "hora_almoco_saida", "hora_almoco_volta", "hora_saida"].forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.value = '';
+        }
+    });
+
+    // Reseta os valores do resumo
+    document.getElementById('horas_normais').textContent = '0.00';
+    document.getElementById('horas_extras').textContent = '0.00';
+    document.getElementById('adicional_noturno').textContent = '0.00';
+
+    // Remove classes de validação
+    ["hora_entrada", "hora_almoco_saida", "hora_almoco_volta", "hora_saida"].forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.classList.remove('is-valid', 'is-invalid');
+        }
+    });
+  }
   

@@ -9,12 +9,32 @@ logger = logging.getLogger(__name__)
 registros_bp = Blueprint('registros', __name__)
 
 def validar_horario(horario_str):
-    try:
-        if not horario_str:
-            return None
-        return datetime.strptime(horario_str, '%H:%M').time()
-    except ValueError:
+    """Valida uma string de horário e a converte para um objeto time."""
+    if not horario_str:
         return None
+    for fmt in ('%H:%M', '%H:%M:%S'):
+        try:
+            return datetime.strptime(horario_str, fmt).time()
+        except ValueError:
+            pass
+    return None
+
+def formatar_horario(h_str):
+    try:
+        if not h_str:
+            return ''
+        if isinstance(h_str, str):
+            if len(h_str) == 5 and h_str[2] == ':':
+                return h_str
+            if len(h_str) >= 8 and h_str[2] == ':' and h_str[5] == ':':
+                return h_str[:5]
+        if isinstance(h_str, time):
+            return h_str.strftime('%H:%M')
+        time_obj = validar_horario(h_str)
+        return time_obj.strftime('%H:%M') if isinstance(time_obj, time) else ''
+    except Exception as e:
+        logger.error(f"Erro ao formatar horário: valor={h_str} erro={e}")
+        return ''
 
 @registros_bp.route('/', methods=['GET', 'POST'])
 def registros():
@@ -25,18 +45,20 @@ def registros():
             # Validação dos campos obrigatórios
             funcionario_id = data.get('funcionario_id')
             data_trabalho = data.get('data_trabalho')
-            hora_entrada = data.get('hora_entrada')
-            hora_saida = data.get('hora_saida')
+            hora_entrada_str = data.get('hora_entrada')
+            hora_almoco_saida_str = data.get('hora_almoco_saida')
+            hora_almoco_volta_str = data.get('hora_almoco_volta')
+            hora_saida_str = data.get('hora_saida')
             
-            if not all([funcionario_id, data_trabalho, hora_entrada, hora_saida]):
+            if not all([funcionario_id, data_trabalho, hora_entrada_str, hora_saida_str]):
                 flash('Todos os campos obrigatórios devem ser preenchidos', 'error')
                 return redirect(url_for('registros.registros'))
             
             # Validação dos horários
-            hora_entrada = validar_horario(hora_entrada)
-            hora_almoco_saida = validar_horario(data.get('hora_almoco_saida'))
-            hora_almoco_volta = validar_horario(data.get('hora_almoco_volta'))
-            hora_saida = validar_horario(hora_saida)
+            hora_entrada = validar_horario(hora_entrada_str)
+            hora_almoco_saida = validar_horario(hora_almoco_saida_str)
+            hora_almoco_volta = validar_horario(hora_almoco_volta_str)
+            hora_saida = validar_horario(hora_saida_str)
             
             if not all([hora_entrada, hora_saida]):
                 flash('Horários de entrada e saída são obrigatórios e devem ser válidos', 'error')
@@ -45,10 +67,10 @@ def registros():
             # Cálculo das horas
             try:
                 resultado = calcular_horas(
-                    hora_entrada.strftime('%H:%M'),
-                    hora_almoco_saida.strftime('%H:%M') if hora_almoco_saida else None,
-                    hora_almoco_volta.strftime('%H:%M') if hora_almoco_volta else None,
-                    hora_saida.strftime('%H:%M')
+                    hora_entrada_str,
+                    hora_almoco_saida_str,
+                    hora_almoco_volta_str,
+                    hora_saida_str
                 )
             except Exception as e:
                 logger.error(f"Erro ao calcular horas: {str(e)}")
@@ -103,27 +125,66 @@ def registros():
             registros_processados = []
             for registro in registros:
                 try:
+                    # Processamento seguro de cada campo
+                    try:
+                        data_fmt = datetime.strptime(registro.get('data_trabalho', ''), '%Y-%m-%d').strftime('%d/%m/%Y') if registro.get('data_trabalho') else ''
+                    except Exception as e:
+                        logger.error(f"Erro ao processar data_trabalho: valor={registro.get('data_trabalho', '')} erro={e}")
+                        data_fmt = ''
+                    try:
+                        entrada_fmt = formatar_horario(registro.get('hora_entrada'))
+                    except Exception as e:
+                        logger.error(f"Erro ao processar hora_entrada: valor={registro.get('hora_entrada')} erro={e}")
+                        entrada_fmt = ''
+                    try:
+                        saida_fmt = formatar_horario(registro.get('hora_saida'))
+                    except Exception as e:
+                        logger.error(f"Erro ao processar hora_saida: valor={registro.get('hora_saida')} erro={e}")
+                        saida_fmt = ''
+                    try:
+                        almoco_inicio_fmt = formatar_horario(registro.get('hora_almoco_saida'))
+                    except Exception as e:
+                        logger.error(f"Erro ao processar hora_almoco_saida: valor={registro.get('hora_almoco_saida')} erro={e}")
+                        almoco_inicio_fmt = ''
+                    try:
+                        almoco_fim_fmt = formatar_horario(registro.get('hora_almoco_volta'))
+                    except Exception as e:
+                        logger.error(f"Erro ao processar hora_almoco_volta: valor={registro.get('hora_almoco_volta')} erro={e}")
+                        almoco_fim_fmt = ''
+
                     registro_processado = {
                         'id': registro.get('id', ''),
-                        'data': datetime.strptime(registro.get('data_trabalho', ''), '%Y-%m-%d') if registro.get('data_trabalho') else None,
+                        'data': data_fmt,
                         'funcionario': registro.get('funcionarios', {}).get('nome', '') if registro.get('funcionarios') else '',
-                        'entrada': datetime.strptime(registro.get('hora_entrada', ''), '%H:%M') if registro.get('hora_entrada') else None,
-                        'saida': datetime.strptime(registro.get('hora_saida', ''), '%H:%M') if registro.get('hora_saida') else None,
-                        'almoco_inicio': datetime.strptime(registro.get('hora_almoco_saida', ''), '%H:%M') if registro.get('hora_almoco_saida') else None,
-                        'almoco_fim': datetime.strptime(registro.get('hora_almoco_volta', ''), '%H:%M') if registro.get('hora_almoco_volta') else None,
-                        'horas_normais': registro.get('horas_normais', 0),
-                        'horas_extras': registro.get('horas_extras', 0),
-                        'adicional_noturno': registro.get('adicional_noturno', 0)
+                        'entrada': entrada_fmt,
+                        'saida': saida_fmt,
+                        'almoco_inicio': almoco_inicio_fmt,
+                        'almoco_fim': almoco_fim_fmt,
+                        'horas_normais': registro.get('horas_normais', '00:00'),
+                        'horas_extras': registro.get('horas_extras', '00:00'),
+                        'adicional_noturno': registro.get('adicional_noturno', '00:00')
                     }
                     registros_processados.append(registro_processado)
                 except Exception as e:
-                    logger.error(f"Erro ao processar registro: {str(e)}")
+                    logger.error(f"Erro ao processar registro completo: {registro} erro={e}")
                     continue
 
         except Exception as e:
             logger.error(f"Erro ao buscar registros: {str(e)}")
             flash('Erro ao carregar registros do mês', 'error')
             registros_processados = []
+            # Tenta buscar funcionários novamente se não existir
+            if 'funcionarios' not in locals() or not funcionarios:
+                try:
+                    response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
+                    funcionarios = get_supabase_data(response)
+                except Exception as e:
+                    logger.error(f"Erro ao buscar funcionários no except global: {str(e)}")
+                    funcionarios = []
+            return render_template('registros.html', 
+                                 funcionarios=funcionarios, 
+                                 mes_ano=datetime.now().strftime('%Y-%m'),
+                                 registros=[])
             
         return render_template('registros.html', 
                              funcionarios=funcionarios, 
@@ -132,7 +193,21 @@ def registros():
     except Exception as e:
         logger.error(f"Erro não tratado na rota registros: {str(e)}")
         flash('Ocorreu um erro inesperado', 'error')
-        return redirect(url_for('registros.registros'))
+        if request.method == 'POST':
+            return redirect(url_for('registros.registros'))
+        else:
+            # Tenta buscar funcionários novamente se não existir
+            if 'funcionarios' not in locals() or not funcionarios:
+                try:
+                    response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
+                    funcionarios = get_supabase_data(response)
+                except Exception as e:
+                    logger.error(f"Erro ao buscar funcionários no except global: {str(e)}")
+                    funcionarios = []
+            return render_template('registros.html', 
+                                 funcionarios=funcionarios, 
+                                 mes_ano=datetime.now().strftime('%Y-%m'),
+                                 registros=[])
 
 @registros_bp.route('/editar_registro/<id>', methods=['GET', 'POST'])
 def editar_registro(id):
@@ -143,18 +218,20 @@ def editar_registro(id):
             # Validação dos campos obrigatórios
             funcionario_id = data.get('funcionario_id')
             data_trabalho = data.get('data_trabalho')
-            hora_entrada = data.get('hora_entrada')
-            hora_saida = data.get('hora_saida')
+            hora_entrada_str = data.get('hora_entrada')
+            hora_almoco_saida_str = data.get('hora_almoco_saida')
+            hora_almoco_volta_str = data.get('hora_almoco_volta')
+            hora_saida_str = data.get('hora_saida')
             
-            if not all([funcionario_id, data_trabalho, hora_entrada, hora_saida]):
+            if not all([funcionario_id, data_trabalho, hora_entrada_str, hora_saida_str]):
                 flash('Todos os campos obrigatórios devem ser preenchidos', 'error')
                 return redirect(url_for('registros.editar_registro', id=id))
             
             # Validação dos horários
-            hora_entrada = validar_horario(hora_entrada)
-            hora_almoco_saida = validar_horario(data.get('hora_almoco_saida'))
-            hora_almoco_volta = validar_horario(data.get('hora_almoco_volta'))
-            hora_saida = validar_horario(hora_saida)
+            hora_entrada = validar_horario(hora_entrada_str)
+            hora_almoco_saida = validar_horario(hora_almoco_saida_str)
+            hora_almoco_volta = validar_horario(hora_almoco_volta_str)
+            hora_saida = validar_horario(hora_saida_str)
             
             if not all([hora_entrada, hora_saida]):
                 flash('Horários de entrada e saída são obrigatórios e devem ser válidos', 'error')
@@ -173,10 +250,10 @@ def editar_registro(id):
             # Cálculo das horas
             try:
                 resultado = calcular_horas(
-                    hora_entrada.strftime('%H:%M'),
-                    hora_almoco_saida.strftime('%H:%M') if hora_almoco_saida else None,
-                    hora_almoco_volta.strftime('%H:%M') if hora_almoco_volta else None,
-                    hora_saida.strftime('%H:%M')
+                    hora_entrada_str,
+                    hora_almoco_saida_str,
+                    hora_almoco_volta_str,
+                    hora_saida_str
                 )
             except Exception as e:
                 logger.error(f"Erro ao calcular horas: {str(e)}")
@@ -312,25 +389,25 @@ def novo_registro():
             # Obtém dados do formulário
             funcionario_id = request.form.get('funcionario_id')
             data_trabalho = request.form.get('data_trabalho')
-            hora_entrada = request.form.get('hora_entrada')
-            hora_saida = request.form.get('hora_saida')
-            hora_almoco_saida = request.form.get('hora_almoco_saida')
-            hora_almoco_volta = request.form.get('hora_almoco_volta')
+            hora_entrada_str = request.form.get('hora_entrada')
+            hora_saida_str = request.form.get('hora_saida')
+            hora_almoco_saida_str = request.form.get('hora_almoco_saida')
+            hora_almoco_volta_str = request.form.get('hora_almoco_volta')
             observacoes = request.form.get('observacoes')
             
             # Calcula horas trabalhadas
             horas_normais, horas_extras, adicional_noturno = calcular_horas(
-                hora_entrada, hora_saida, hora_almoco_saida, hora_almoco_volta
+                hora_entrada_str, hora_saida_str, hora_almoco_saida_str, hora_almoco_volta_str
             )
             
             # Prepara dados para inserção
             registro = {
                 'funcionario_id': funcionario_id,
                 'data_trabalho': data_trabalho,
-                'hora_entrada': hora_entrada,
-                'hora_saida': hora_saida,
-                'hora_almoco_saida': hora_almoco_saida,
-                'hora_almoco_volta': hora_almoco_volta,
+                'hora_entrada': hora_entrada_str,
+                'hora_saida': hora_saida_str,
+                'hora_almoco_saida': hora_almoco_saida_str,
+                'hora_almoco_volta': hora_almoco_volta_str,
                 'horas_normais': horas_normais,
                 'horas_extras': horas_extras,
                 'adicional_noturno': adicional_noturno,

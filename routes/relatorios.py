@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from utils.db_connection import supabase
 from datetime import datetime
 import logging
-from io import BytesIO
+from io import StringIO, BytesIO
 import csv
 from fpdf import FPDF
 
@@ -26,30 +26,36 @@ def relatorios():
         
         # Obtém os filtros da URL
         filtro_id = request.args.get('funcionario_id', '')
-        mes_ano = request.args.get('mes', datetime.now().strftime('%Y-%m'))
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
+        
+        # Se não houver filtros de data, usa o mês atual
+        if not data_inicio and not data_fim:
+            mes_atual = datetime.now().strftime('%Y-%m')
+            data_inicio = f"{mes_atual}-01"
+            # Calcula o último dia do mês
+            ano, mes = map(int, mes_atual.split('-'))
+            if mes == 12:
+                data_fim = f"{ano + 1}-01-01"
+            else:
+                data_fim = f"{ano}-{mes + 1:02d}-01"
         
         # Busca os registros com base nos filtros
         query = supabase.table('registros_horas').select('*')
         if filtro_id:
             query = query.eq('funcionario_id', filtro_id)
-        if mes_ano:
-            # Calcula o primeiro e último dia do mês corretamente
-            ano, mes = map(int, mes_ano.split('-'))
-            primeiro_dia = f"{mes_ano}-01"
-            if mes == 12:
-                ultimo_dia = f"{ano + 1}-01-01"
-            else:
-                ultimo_dia = f"{ano}-{mes + 1:02d}-01"
-            
-            query = query.gte('data_trabalho', primeiro_dia).lt('data_trabalho', ultimo_dia)
+        if data_inicio:
+            query = query.gte('data_trabalho', data_inicio)
+        if data_fim:
+            query = query.lt('data_trabalho', data_fim)
         
         registros = query.execute().data
         
         # Processa os registros para o formato da tabela
         registros_processados = []
-        total_horas = 0
+        total_horas_normais = 0
         total_horas_extras = 0
-        total_horas_noturnas = 0
+        total_adicional_noturno = 0
         
         for registro in registros:
             try:
@@ -61,9 +67,9 @@ def relatorios():
                 horas_normais = float(registro['horas_normais'] or 0)
                 horas_extras = float(registro['horas_extras'] or 0)
                 adicional_noturno = float(registro['adicional_noturno'] or 0)
-                total_horas += horas_normais
+                total_horas_normais += horas_normais
                 total_horas_extras += horas_extras
-                total_horas_noturnas += adicional_noturno
+                total_adicional_noturno += adicional_noturno
                 
                 # Converte as strings de horário para datetime
                 def parse_time(time_str):
@@ -76,15 +82,21 @@ def relatorios():
                     except:
                         return None
 
+                # Processa horários de almoço
+                almoco_inicio = parse_time(registro['hora_almoco_saida'])
+                almoco_fim = parse_time(registro['hora_almoco_volta'])
+
                 registros_processados.append({
                     'id': registro['id'],
                     'data': datetime.strptime(registro['data_trabalho'], '%Y-%m-%d'),
-                    'funcionario': nome_funcionario,
-                    'hora_entrada': parse_time(registro['hora_entrada']),
-                    'hora_saida': parse_time(registro['hora_saida']),
-                    'hora_almoco_saida': parse_time(registro['hora_almoco_saida']),
-                    'hora_almoco_volta': parse_time(registro['hora_almoco_volta']),
-                    'total_horas': datetime.strptime(f"{int(horas_normais):02d}:{int((horas_normais % 1) * 60):02d}", '%H:%M')
+                    'funcionario': {'nome': nome_funcionario},
+                    'entrada': parse_time(registro['hora_entrada']),
+                    'saida': parse_time(registro['hora_saida']),
+                    'almoco_inicio': almoco_inicio,
+                    'almoco_fim': almoco_fim,
+                    'horas_normais': f"{int(horas_normais):02d}:{int((horas_normais % 1) * 60):02d}",
+                    'horas_extras': f"{int(horas_extras):02d}:{int((horas_extras % 1) * 60):02d}",
+                    'adicional_noturno': f"{int(adicional_noturno):02d}:{int((adicional_noturno % 1) * 60):02d}"
                 })
             except Exception as e:
                 logger.error(f"Erro ao processar registro: {str(e)}")
@@ -102,43 +114,48 @@ def relatorios():
         
         return render_template('relatorios.html',
                            funcionarios=funcionarios,
-                           filtro_id=filtro_id,
-                           mes_ano=mes_ano,
+                           funcionario_id=filtro_id,
+                           data_inicio=datetime.strptime(data_inicio, '%Y-%m-%d') if data_inicio else None,
+                           data_fim=datetime.strptime(data_fim, '%Y-%m-%d') if data_fim else None,
                            registros=registros_processados,
                            grafico_data=grafico_data,
-                           total_horas=format_total_hours(total_horas),
+                           total_horas_normais=format_total_hours(total_horas_normais),
                            total_horas_extras=format_total_hours(total_horas_extras),
-                           total_horas_noturnas=format_total_hours(total_horas_noturnas))
+                           total_adicional_noturno=format_total_hours(total_adicional_noturno))
     except Exception as e:
         logger.error(f"Erro na rota de relatórios: {str(e)}")
         flash('Erro ao carregar relatórios', 'error')
         return render_template('relatorios.html',
                            funcionarios=[],
-                           filtro_id='',
-                           mes_ano=datetime.now().strftime('%Y-%m'),
+                           funcionario_id='',
+                           data_inicio=None,
+                           data_fim=None,
                            registros=[],
                            grafico_data={'labels': [], 'horas_normais': [], 'horas_extras': [], 'adicional_noturno': []},
-                           total_horas='00:00',
+                           total_horas_normais='00:00',
                            total_horas_extras='00:00',
-                           total_horas_noturnas='00:00')
+                           total_adicional_noturno='00:00')
 
-@relatorios_bp.route('/exportar_pdf', methods=['POST'])
-def exportar_pdf():
+@relatorios_bp.route('/exportar_csv', methods=['POST'])
+def exportar_csv():
     try:
         funcionario_id = request.form.get('funcionario_id')
-        mes = request.form.get('mes')
+        data_inicio = request.form.get('data_inicio')
+        data_fim = request.form.get('data_fim')
         
         # Busca os registros
         query = supabase.table('registros_horas').select('*')
         if funcionario_id:
             query = query.eq('funcionario_id', funcionario_id)
-        if mes:
-            query = query.gte('data_trabalho', f"{mes}-01").lt('data_trabalho', f"{mes}-32")
+        if data_inicio:
+            query = query.gte('data_trabalho', data_inicio)
+        if data_fim:
+            query = query.lt('data_trabalho', data_fim)
         
         registros = query.execute().data
         
         # Cria o arquivo CSV em memória
-        output = io.StringIO()
+        output = StringIO()
         writer = csv.writer(output)
         
         # Escreve o cabeçalho
@@ -153,22 +170,22 @@ def exportar_pdf():
             writer.writerow([
                 registro['data_trabalho'],
                 nome_funcionario,
-                registro['hora_entrada'],
+                registro['hora_entrada'] or '-',
                 registro['hora_almoco_saida'] or '-',
                 registro['hora_almoco_volta'] or '-',
-                registro['hora_saida'],
-                registro['horas_normais'],
-                registro['horas_extras'],
-                registro['adicional_noturno']
+                registro['hora_saida'] or '-',
+                registro['horas_normais'] or '0',
+                registro['horas_extras'] or '0',
+                registro['adicional_noturno'] or '0'
             ])
         
         # Prepara o arquivo para download
         output.seek(0)
         return send_file(
-            io.BytesIO(output.getvalue().encode('utf-8')),
+            BytesIO(output.getvalue().encode('utf-8')),
             mimetype='text/csv',
             as_attachment=True,
-            download_name=f'relatorio_horas_{mes}.csv'
+            download_name=f'relatorio_horas_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
         )
     except Exception as e:
         logger.error(f"Erro ao exportar relatório: {str(e)}")

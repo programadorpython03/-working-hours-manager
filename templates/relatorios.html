@@ -13,48 +13,52 @@
 
     <div class="content-card">
         <h2>Filtros</h2>
-        <form id="form-relatorio" method="get">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="funcionario_id" class="tooltip">
-                            Funcionário
-                            <span class="tooltip-text">Selecione o funcionário para filtrar</span>
-                        </label>
-                        <select id="funcionario_id" name="funcionario_id" class="form-control">
-                            <option value="">Todos os funcionários</option>
-                            {% for f in funcionarios %}
-                            <option value="{{ f.id }}" {% if f.id == funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="data_inicio" class="tooltip">
-                            Data Inicial
-                            <span class="tooltip-text">Data inicial do período</span>
-                        </label>
-                        <input type="date" id="data_inicio" name="data_inicio" class="form-control" 
-                               value="{{ data_inicio.strftime('%Y-%m-%d') if data_inicio else '' }}">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="data_fim" class="tooltip">
-                            Data Final
-                            <span class="tooltip-text">Data final do período</span>
-                        </label>
-                        <input type="date" id="data_fim" name="data_fim" class="form-control"
-                               value="{{ data_fim.strftime('%Y-%m-%d') if data_fim else '' }}">
-                    </div>
+        <form id="form-relatorio" method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="funcionario_id" class="tooltip">
+                        Funcionário
+                        <span class="tooltip-text">Selecione o funcionário para filtrar</span>
+                    </label>
+                    <select id="funcionario_id" name="funcionario_id" class="form-control" class="form-select">
+                        <option value="">Todos os funcionários</option>
+                        {% for f in funcionarios %}
+                        <option value="{{ f.id }}" {% if f.id|string == funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
-
-            <button type="submit" class="btn btn-primary tooltip">
-                <i class="fas fa-search me-2"></i>Gerar Relatório
-                <span class="tooltip-text">Clique para gerar o relatório com os filtros selecionados</span>
-            </button>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="data_inicio" class="tooltip">
+                        Data Inicial
+                        <span class="tooltip-text">Data inicial do período</span>
+                    </label>
+                    <input type="date" id="data_inicio" name="data_inicio" class="form-control" 
+                           value="{{ data_inicio.strftime('%Y-%m-%d') if data_inicio else '' }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="data_fim" class="tooltip">
+                        Data Final
+                        <span class="tooltip-text">Data final do período</span>
+                    </label>
+                    <input type="date" id="data_fim" name="data_fim" class="form-control"
+                           value="{{ data_fim.strftime('%Y-%m-%d') if data_fim else '' }}">
+                </div>
+            </div>
+            <div class="col-md-2 d-flex flex-column align-items-end">
+                <button type="submit" class="btn btn-primary tooltip w-100 mb-2">
+                    <i class="fas fa-search me-2"></i>Gerar Relatório
+                    <span class="tooltip-text">Clique para gerar o relatório com os filtros selecionados</span>
+                </button>
+                {% if registros %}
+                <button type="button" class="btn btn-success w-100" onclick="exportarCSV()">
+                    <i class="fas fa-download me-4"></i>Exportar CSV
+                </button>
+                {% endif %}
+            </div>
         </form>
     </div>
 
@@ -97,8 +101,8 @@
                     <tr>
                         <td>{{ r.data.strftime('%d/%m/%Y') }}</td>
                         <td>{{ r.funcionario.nome }}</td>
-                        <td>{{ r.entrada.strftime('%H:%M') }}</td>
-                        <td>{{ r.saida.strftime('%H:%M') }}</td>
+                        <td>{{ r.entrada.strftime('%H:%M') if r.entrada else '-' }}</td>
+                        <td>{{ r.saida.strftime('%H:%M') if r.saida else '-' }}</td>
                         <td>
                             {% if r.almoco_inicio and r.almoco_fim %}
                             {{ r.almoco_inicio.strftime('%H:%M') }} - {{ r.almoco_fim.strftime('%H:%M') }}
@@ -124,6 +128,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Dados do gráfico disponíveis globalmente
+window.graficoData = {{ grafico_data|tojson|safe }};
+</script>
 <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
 {% endblock %}
 

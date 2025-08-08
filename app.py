@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.jinja_env.globals['datetime'] = datetime
 
 # Verifica se as variáveis de ambiente necessárias estão configuradas
 required_env_vars = ['SUPABASE_URL', 'SUPABASE_KEY', 'SECRET_KEY']

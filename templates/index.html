@@ -305,10 +305,10 @@
     <!-- Filtros -->
     <div class="filter-section">
         <h2>Filtros</h2>
-        <form id="filter-form" class="filter-form" method="get">
+        <form id="filter-form" class="filter-form" method="get" action="/">
             <div class="form-group">
                 <label for="mes">Mês</label>
-                <input type="month" id="mes" name="mes" class="form-control" value="{{ mes_atual }}">
+                <input type="month" id="mes" name="mes" class="form-control" value="{{ mes_atual|default(datetime.utcnow().strftime('%Y-%m')) }}" required>
             </div>
             <div class="form-group">
                 <label for="funcionario">Funcionário</label>

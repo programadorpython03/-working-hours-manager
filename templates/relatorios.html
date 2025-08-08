@@ -130,7 +130,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Dados do gráfico disponíveis globalmente
-window.graficoData = "{{ grafico_data|tojson|safe }}";
+window.graficoData = "{{ grafico_data|safe }}";
 </script>
 <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
 {% endblock %}

@@ -20,10 +20,10 @@
                         Funcionário
                         <span class="tooltip-text">Selecione o funcionário para filtrar</span>
                     </label>
-                    <select id="funcionario_id" name="funcionario_id" class="form-control" class="form-select">
+                    <select id="funcionario_id" name="funcionario_id" class="form-control">
                         <option value="">Todos os funcionários</option>
                         {% for f in funcionarios %}
-                        <option value="{{ f.id }}" {% if f.id|string == funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
+                        <option value="{{ f.id }}" {% if f.id == funcionario_id or f.id|string == funcionario_id|string %}selected{% endif %}>{{ f.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -130,8 +130,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Dados do gráfico disponíveis globalmente
-window.graficoData = "{{ grafico_data|safe }}";
+const graficoData = {{ grafico_data|tojson }};
+console.log(graficoData);
 </script>
 <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
 {% endblock %}
-

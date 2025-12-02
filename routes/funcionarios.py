@@ -88,11 +88,13 @@ def editar_funcionario(id):
         # Busca o funcionário para edição
         try:
             response = supabase.table('funcionarios').select('*').eq('id', id).single().execute()
-            funcionario = response.data
+            funcionarios = get_supabase_data(response)
             
-            if not funcionario:
+            if not funcionarios or len(funcionarios) == 0:
                 flash('Funcionário não encontrado', 'error')
                 return redirect(url_for('funcionarios.funcionarios'))
+            
+            funcionario = funcionarios[0]  # .single() retorna um único registro
             
             return render_template('editar_funcionario.html', funcionario=funcionario)
         except Exception as e:
@@ -113,7 +115,7 @@ def excluir_funcionario(id):
             response = supabase.table('registros_horas').select('id').eq('funcionario_id', id).execute()
             registros = get_supabase_data(response)
             
-            if registros:
+            if registros and len(registros) > 0:
                 # Se existem registros, marca como inativo
                 supabase.table('funcionarios').update({
                     'ativo': False,
@@ -142,9 +144,9 @@ def toggle_status(id):
             return redirect(url_for('funcionarios.funcionarios'))
             
         response = supabase.table('funcionarios').select('*').eq('id', id).single().execute()
-        funcionario = get_supabase_data(response)
-        if funcionario:
-            novo_status = not funcionario[0]['ativo']
+        funcionarios = get_supabase_data(response)
+        if funcionarios and len(funcionarios) > 0:
+            novo_status = not funcionarios[0]['ativo']
             supabase.table('funcionarios').update({'ativo': novo_status}).eq('id', id).execute()
             flash('Status atualizado com sucesso!', 'success')
         else:

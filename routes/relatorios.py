@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
-from utils.db_connection import supabase
+from utils.db_connection import supabase, get_supabase_data
 from datetime import datetime
 import logging
 from io import StringIO, BytesIO
@@ -10,19 +10,21 @@ logger = logging.getLogger(__name__)
 relatorios_bp = Blueprint('relatorios', __name__)
 
 # Dados para o gráfico
-def gerar_dados_grafico(registros):
+def gerar_dados_grafico(registros_brutos):
+    """Gera dados do gráfico a partir dos registros brutos do banco"""
     return {
-        'labels': [r['data_trabalho'] for r in registros],
-        'horas_normais': [float(r.get('horas_normais', 0)) for r in registros],
-        'horas_extras': [float(r.get('horas_extras', 0)) for r in registros],
-        'adicional_noturno': [float(r.get('adicional_noturno', 0)) for r in registros]
+        'labels': [r['data_trabalho'] for r in registros_brutos],
+        'horas_normais': [float(r.get('horas_normais', 0)) for r in registros_brutos],
+        'horas_extras': [float(r.get('horas_extras', 0)) for r in registros_brutos],
+        'adicional_noturno': [float(r.get('adicional_noturno', 0)) for r in registros_brutos]
     }
 
 @relatorios_bp.route('/', methods=['GET'])
 def relatorios():
     try:
         # Busca de funcionários ativos
-        funcionarios = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute().data
+        response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
+        funcionarios = get_supabase_data(response)
         
         # Obtém os filtros da URL
         filtro_id = request.args.get('funcionario_id', '')
@@ -49,7 +51,8 @@ def relatorios():
         if data_fim:
             query = query.lt('data_trabalho', data_fim)
         
-        registros = query.execute().data
+        response = query.execute()
+        registros = get_supabase_data(response)
         
         # Processa os registros para o formato da tabela
         registros_processados = []
@@ -60,8 +63,9 @@ def relatorios():
         for registro in registros:
             try:
                 # Busca o nome do funcionário
-                funcionario = supabase.table('funcionarios').select('nome').eq('id', registro['funcionario_id']).single().execute()
-                nome_funcionario = funcionario.data['nome'] if funcionario.data else 'N/A'
+                response = supabase.table('funcionarios').select('nome').eq('id', registro['funcionario_id']).single().execute()
+                funcionarios = get_supabase_data(response)
+                nome_funcionario = funcionarios[0]['nome'] if funcionarios and len(funcionarios) > 0 else 'N/A'
                 
                 # Calcula o total de horas
                 horas_normais = float(registro['horas_normais'] or 0)
@@ -152,7 +156,8 @@ def exportar_csv():
         if data_fim:
             query = query.lt('data_trabalho', data_fim)
         
-        registros = query.execute().data
+        response = query.execute()
+        registros = get_supabase_data(response)
         
         # Cria o arquivo CSV em memória
         output = StringIO()
@@ -164,8 +169,9 @@ def exportar_csv():
         
         # Escreve os dados
         for registro in registros:
-            funcionario = supabase.table('funcionarios').select('nome').eq('id', registro['funcionario_id']).single().execute()
-            nome_funcionario = funcionario.data['nome'] if funcionario.data else 'N/A'
+            response = supabase.table('funcionarios').select('nome').eq('id', registro['funcionario_id']).single().execute()
+            funcionarios = get_supabase_data(response)
+            nome_funcionario = funcionarios[0]['nome'] if funcionarios and len(funcionarios) > 0 else 'N/A'
             
             writer.writerow([
                 registro['data_trabalho'],

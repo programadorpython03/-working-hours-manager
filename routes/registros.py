@@ -262,8 +262,9 @@ def editar_registro(id):
 
             # Verifica se o funcionário existe e está ativo
             try:
-                funcionario = supabase.table('funcionarios').select('*').eq('id', funcionario_id).eq('ativo', True).single().execute()
-                if not funcionario.data:
+                response = supabase.table('funcionarios').select('*').eq('id', funcionario_id).eq('ativo', True).single().execute()
+                funcionarios = get_supabase_data(response)
+                if not funcionarios or len(funcionarios) == 0:
                     flash('Funcionário não encontrado ou inativo', 'error')
                     return redirect(url_for('registros.editar_registro', id=id))
             except Exception as e:
@@ -297,18 +298,19 @@ def editar_registro(id):
         try:
             logger.info(f"Buscando registro com ID: {id}")
             response = supabase.table('registros_horas').select('*, funcionarios(nome)').eq('id', id).single().execute()
+            registros = get_supabase_data(response)
             
-            if not response.data:
+            if not registros or len(registros) == 0:
                 logger.error(f"Registro não encontrado para o ID: {id}")
                 flash('Registro não encontrado', 'error')
                 return redirect(url_for('registros.registros'))
             
-            registro = response.data
+            registro = registros[0]  # .single() retorna um único registro
             logger.info(f"Registro encontrado: {registro}")
             
             # Busca funcionários ativos
             response = supabase.table('funcionarios').select('*').eq('ativo', True).order('nome').execute()
-            funcionarios = response.data
+            funcionarios = get_supabase_data(response)
             
             return render_template('editar_registro.html', 
                                  registro=registro,
@@ -350,7 +352,8 @@ def verificar_horas_extras(funcionario_id, mes_ano):
             ultimo_dia = f"{mes_ano[:4]}-{int(mes_ano[5:7])+1:02d}-01"
         
         # Busca registros do mês
-        registros = supabase.table('registros_horas').select('*').eq('funcionario_id', funcionario_id).gte('data_trabalho', primeiro_dia).lt('data_trabalho', ultimo_dia).execute().data
+        response = supabase.table('registros_horas').select('*').eq('funcionario_id', funcionario_id).gte('data_trabalho', primeiro_dia).lt('data_trabalho', ultimo_dia).execute()
+        registros = get_supabase_data(response)
         
         # Calcula total de horas extras
         total_horas_extras = sum(float(r['horas_extras'] or 0) for r in registros)
@@ -360,7 +363,9 @@ def verificar_horas_extras(funcionario_id, mes_ano):
         
         if total_horas_extras > LIMITE_HORAS_EXTRAS:
             # Busca dados do funcionário
-            funcionario = supabase.table('funcionarios').select('nome').eq('id', funcionario_id).execute().data[0]
+            response = supabase.table('funcionarios').select('nome').eq('id', funcionario_id).execute()
+            funcionarios = get_supabase_data(response)
+            funcionario = funcionarios[0] if funcionarios and len(funcionarios) > 0 else {'nome': 'N/A'}
             
             # Cria notificação
             notificacao = {
@@ -435,9 +440,10 @@ def novo_registro():
     
     # GET: Exibe formulário
     try:
-        funcionarios = supabase.table('funcionarios').select('*').eq('ativo', True).execute().data
+        response = supabase.table('funcionarios').select('*').eq('ativo', True).execute()
+        funcionarios = get_supabase_data(response)
         return render_template('registros.html', funcionarios=funcionarios)
     except Exception as e:
         logger.error(f"Erro ao carregar formulário: {str(e)}")
         flash('Erro ao carregar formulário', 'error')
-        return redirect(url_for('index'))
+        return redirect('/')

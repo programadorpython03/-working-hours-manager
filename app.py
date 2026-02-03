@@ -15,9 +15,30 @@ import traceback
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from flask_login import LoginManager, login_required, current_user
+from routes.auth import auth_bp, User
+
+# ... imports ...
+
 app = Flask(__name__)
 app.config.from_object(Config)
 app.jinja_env.globals['datetime'] = datetime
+
+# Configuração do Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Por favor, faça login para acessar esta página.'
+login_manager.login_message_category = 'warning'
+
+@login_manager.user_loader
+def load_user(user_id):
+    # Como não estamos armazenando usuários no banco local, 
+    # e o Supabase gerencia a sessão, podemos recriar o objeto User
+    # Idealmente, verificaríamos se o token ainda é válido, 
+    # mas para este escopo simples, assumimos a sessão do Flask-Login.
+    # Em uma implementação mais robusta, buscaríamos dados do user no Supabase.
+    return User(id=user_id, email="admin@example.com") # Email placeholder
 
 # Verifica se as variáveis de ambiente necessárias estão configuradas
 required_env_vars = ['SUPABASE_URL', 'SUPABASE_KEY', 'SECRET_KEY']
@@ -32,137 +53,47 @@ logger.info(f"SUPABASE_KEY configurada: {'Sim' if os.getenv('SUPABASE_KEY') else
 logger.info(f"SECRET_KEY configurada: {'Sim' if os.getenv('SECRET_KEY') else 'Não'}")
 
 # Blueprints
+app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(funcionarios_bp, url_prefix='/funcionarios')
 app.register_blueprint(registros_bp, url_prefix='/registros')
 app.register_blueprint(relatorios_bp, url_prefix='/relatorios')
 
 @app.route('/')
+@login_required
 def index():
     try:
-        # Obtém os parâmetros de filtro
-        mes = request.args.get('mes', datetime.now().strftime('%Y-%m'))
+        from services.dashboard_service import DashboardService
+        
+        # Obtém parâmetros
+        mes = request.args.get('mes')
         funcionario_id = request.args.get('funcionario_id')
         
-        # Converte a string do mês para objeto datetime
-        mes_dt = datetime.strptime(mes, '%Y-%m')
-        inicio_mes = mes_dt.replace(day=1)
-        if mes_dt.month == 12:
-            fim_mes = mes_dt.replace(year=mes_dt.year + 1, month=1, day=1) - timedelta(days=1)
-        else:
-            fim_mes = mes_dt.replace(month=mes_dt.month + 1, day=1) - timedelta(days=1)
+        # Chama serviço
+        dados = DashboardService.get_dashboard_data(mes, funcionario_id)
         
-        # Busca os registros do mês
-        query = supabase.table('registros_horas').select('*').gte('data_trabalho', inicio_mes.isoformat()).lte('data_trabalho', fim_mes.isoformat())
-        if funcionario_id:
-            query = query.eq('funcionario_id', funcionario_id)
-        response = query.execute()
-        registros = get_supabase_data(response)
-        
-        # Busca funcionários ativos
-        response = supabase.table('funcionarios').select('*').eq('ativo', True).execute()
-        funcionarios = get_supabase_data(response)
-        
-        # Busca registros recentes
-        response = supabase.table('registros_horas').select('*, funcionarios(nome)').order('data_trabalho', desc=True).limit(5).execute()
-        registros_recentes = get_supabase_data(response)
-        
-        # Processa as datas dos registros recentes
-        for registro in registros_recentes:
-            if isinstance(registro.get('data_trabalho'), str):
-                registro['data_trabalho'] = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
-        
-        # Prepara dados para o gráfico diário
-        dias_no_mes = (fim_mes - inicio_mes).days + 1
-        labels = [(inicio_mes + timedelta(days=i)).strftime('%d/%m') for i in range(dias_no_mes)]
-        horas_normais = [0] * dias_no_mes
-        horas_extras = [0] * dias_no_mes
-        adicional_noturno = [0] * dias_no_mes
-        
-        for registro in registros:
-            if isinstance(registro.get('data_trabalho'), str):
-                data = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
-            else:
-                data = registro['data_trabalho']
-            dia_index = (data - inicio_mes).days
-            if 0 <= dia_index < dias_no_mes:
-                horas_normais[dia_index] = registro.get('horas_normais', 0)
-                horas_extras[dia_index] = registro.get('horas_extras', 0)
-                adicional_noturno[dia_index] = registro.get('adicional_noturno', 0)
-        
-        grafico_data = {
-            'labels': labels,
-            'horas_normais': horas_normais,
-            'horas_extras': horas_extras,
-            'adicional_noturno': adicional_noturno
-        }
-        
-        # Prepara dados para o gráfico mensal (últimos 6 meses)
-        meses = []
-        horas_normais_mensal = []
-        horas_extras_mensal = []
-        adicional_noturno_mensal = []
-        
-        for i in range(5, -1, -1):
-            data_ref = mes_dt - timedelta(days=30*i)
-            inicio_mes_ref = data_ref.replace(day=1)
-            if data_ref.month == 12:
-                fim_mes_ref = data_ref.replace(year=data_ref.year + 1, month=1, day=1) - timedelta(days=1)
-            else:
-                fim_mes_ref = data_ref.replace(month=data_ref.month + 1, day=1) - timedelta(days=1)
-            
-            meses.append(data_ref.strftime('%m/%Y'))
-            
-            # Busca registros do mês
-            query = supabase.table('registros_horas').select('*').gte('data_trabalho', inicio_mes_ref.isoformat()).lte('data_trabalho', fim_mes_ref.isoformat())
-            if funcionario_id:
-                query = query.eq('funcionario_id', funcionario_id)
-            response = query.execute()
-            registros_mes = get_supabase_data(response)
-            
-            # Calcula totais
-            total_horas_normais = sum(r.get('horas_normais', 0) for r in registros_mes)
-            total_horas_extras = sum(r.get('horas_extras', 0) for r in registros_mes)
-            total_adicional = sum(r.get('adicional_noturno', 0) for r in registros_mes)
-            
-            horas_normais_mensal.append(total_horas_normais)
-            horas_extras_mensal.append(total_horas_extras)
-            adicional_noturno_mensal.append(total_adicional)
-        
-        grafico_mensal = {
-            'labels': meses,
-            'horas_normais': horas_normais_mensal,
-            'horas_extras': horas_extras_mensal,
-            'adicional_noturno': adicional_noturno_mensal
-        }
-        
-        # Calcula totais
-        total_funcionarios = len(funcionarios)
-        total_registros = len(registros)
-        total_horas_extras = sum(r.get('horas_extras', 0) for r in registros)
-        
-        # Se for uma requisição AJAX, retorna JSON
+        # Se for AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
-                'total_funcionarios': total_funcionarios,
-                'total_registros': total_registros,
-                'total_horas_extras': total_horas_extras,
-                'registros_recentes': registros_recentes,
-                'grafico_data': grafico_data,
-                'grafico_mensal': grafico_mensal
+                'total_funcionarios': dados['totais']['funcionarios'],
+                'total_registros': dados['totais']['registros'],
+                'total_horas_extras': dados['totais']['horas_extras'],
+                'registros_recentes': dados['registros_recentes'],
+                'grafico_data': dados['grafico_data'],
+                'grafico_mensal': dados['grafico_mensal']
             })
-        
-        # Se não for AJAX, renderiza o template
+            
+        # Renderiza template
         return render_template('index.html',
-                             mes_atual=mes,
-                             funcionario_id=funcionario_id,
-                             funcionarios=funcionarios,
-                             total_funcionarios=total_funcionarios,
-                             total_registros=total_registros,
-                             total_horas_extras=total_horas_extras,
-                             registros_recentes=registros_recentes,
-                             grafico_data=grafico_data,
-                             grafico_mensal=grafico_mensal)
-                             
+                             mes_atual=dados['mes'],
+                             funcionario_id=dados['funcionario_id'],
+                             funcionarios=dados['funcionarios'],
+                             total_funcionarios=dados['totais']['funcionarios'],
+                             total_registros=dados['totais']['registros'],
+                             total_horas_extras=dados['totais']['horas_extras'],
+                             registros_recentes=dados['registros_recentes'],
+                             grafico_data=dados['grafico_data'],
+                             grafico_mensal=dados['grafico_mensal'])
+
     except Exception as e:
         app.logger.error(f"Erro ao carregar dashboard: {str(e)}")
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

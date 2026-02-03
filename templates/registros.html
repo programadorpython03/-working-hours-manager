@@ -14,6 +14,7 @@
     <div class="content-card">
         <h2>Novo Registro</h2>
         <form id="form-registro" method="post">
+            {{ form.csrf_token }}
             <div class="form-group">
                 <label for="funcionario_id" class="tooltip">
                     Funcionário*
@@ -28,30 +29,21 @@
             </div>
 
             <div class="form-group">
-                <label for="data" class="tooltip">
-                    Data*
-                    <span class="tooltip-text">Data do registro</span>
-                </label>
-                <input type="date" id="data_trabalho" name="data_trabalho" class="form-control" required>
+                {{ form.data_trabalho.label(class="tooltip") }}
+                {{ form.data_trabalho(class="form-control") }}
             </div>
 
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_entrada" class="tooltip">
-                            Entrada*
-                            <span class="tooltip-text">Horário de entrada</span>
-                        </label>
-                        <input type="time" id="hora_entrada" name="hora_entrada" class="form-control time-input" required>
+                        {{ form.hora_entrada.label(class="tooltip") }}
+                        {{ form.hora_entrada(class="form-control time-input") }}
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_saida" class="tooltip">
-                            Saída*
-                            <span class="tooltip-text">Horário de saída</span>
-                        </label>
-                        <input type="time" id="hora_saida" name="hora_saida" class="form-control time-input" required>
+                        {{ form.hora_saida.label(class="tooltip") }}
+                        {{ form.hora_saida(class="form-control time-input") }}
                     </div>
                 </div>
             </div>
@@ -59,30 +51,21 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_saida" class="tooltip">
-                            Início do Almoço
-                            <span class="tooltip-text">Horário de início do almoço</span>
-                        </label>
-                        <input type="time" id="hora_almoco_saida" name="hora_almoco_saida" class="form-control time-input">
+                        {{ form.hora_almoco_saida.label(class="tooltip") }}
+                        {{ form.hora_almoco_saida(class="form-control time-input") }}
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="hora_almoco_volta" class="tooltip">
-                            Fim do Almoço
-                            <span class="tooltip-text">Horário de fim do almoço</span>
-                        </label>
-                        <input type="time" id="hora_almoco_volta" name="hora_almoco_volta" class="form-control time-input">
+                        {{ form.hora_almoco_volta.label(class="tooltip") }}
+                        {{ form.hora_almoco_volta(class="form-control time-input") }}
                     </div>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="observacoes" class="tooltip">
-                    Observações
-                    <span class="tooltip-text">Observações sobre o registro</span>
-                </label>
-                <textarea id="observacoes" name="observacoes" class="form-control" rows="3"></textarea>
+                {{ form.observacoes.label(class="tooltip") }}
+                {{ form.observacoes(class="form-control", rows="3") }}
             </div>
 
             <div class="horas-resumo">
@@ -141,12 +124,15 @@
                         <td>{{ r.adicional_noturno }}</td>
                         <td>
                             <div class="d-flex gap-2">
-                                <a href="{{ url_for('registros.editar_registro', id=r.id) }}" class="btn btn-primary btn-sm tooltip">
+                                <a href="{{ url_for('registros.editar_registro', id=r.id) }}"
+                                    class="btn btn-primary btn-sm tooltip">
                                     <i class="fas fa-edit"></i>
                                     <span class="tooltip-text">Editar registro</span>
                                 </a>
-                                <form method="post" action="{{ url_for('registros.excluir_registro', id=r.id) }}" class="d-inline">
-                                    <button type="submit" class="btn btn-danger btn-sm tooltip" onclick="return confirmarExclusao('{{ r.id }}')">
+                                <form method="post" action="{{ url_for('registros.excluir_registro', id=r.id) }}"
+                                    class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm tooltip"
+                                        onclick="return confirmarExclusao('{{ r.id }}')">
                                         <i class="fas fa-trash"></i>
                                         <span class="tooltip-text">Excluir registro</span>
                                     </button>

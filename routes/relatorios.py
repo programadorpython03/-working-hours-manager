@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
+from flask_login import login_required
 from utils.db_connection import supabase, get_supabase_data
 from datetime import datetime
 import logging
@@ -20,6 +21,7 @@ def gerar_dados_grafico(registros_brutos):
     }
 
 @relatorios_bp.route('/', methods=['GET'])
+@login_required
 def relatorios():
     try:
         # Busca de funcionários ativos
@@ -141,6 +143,7 @@ def relatorios():
                            total_adicional_noturno='00:00')
 
 @relatorios_bp.route('/exportar_csv', methods=['POST'])
+@login_required
 def exportar_csv():
     try:
         funcionario_id = request.form.get('funcionario_id')

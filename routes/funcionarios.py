@@ -1,23 +1,22 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required
 from utils.db_connection import supabase, get_supabase_data
 from datetime import datetime
 import uuid
 import logging
+from forms import FuncionarioForm
 
 logger = logging.getLogger(__name__)
 funcionarios_bp = Blueprint('funcionarios', __name__)
 
 @funcionarios_bp.route('/', methods=['GET', 'POST'])
+@login_required
 def funcionarios():
     try:
-        if request.method == 'POST':
-            nome = request.form.get('nome', '').strip()
-            cargo = request.form.get('cargo', '').strip()
-            
-            # Validação dos dados
-            if not nome:
-                flash('Nome é obrigatório', 'error')
-                return redirect(url_for('funcionarios.funcionarios'))
+        form = FuncionarioForm()
+        if form.validate_on_submit():
+            nome = form.nome.data
+            cargo = form.cargo.data
             
             # Inserção no banco com tratamento de erro
             try:
@@ -29,12 +28,11 @@ def funcionarios():
                     "ativo": True
                 }).execute()
                 flash('Funcionário cadastrado com sucesso!', 'success')
+                return redirect(url_for('funcionarios.funcionarios'))
             except Exception as e:
                 logger.error(f"Erro ao inserir funcionário: {str(e)}")
                 flash('Erro ao cadastrar funcionário', 'error')
             
-            return redirect(url_for('funcionarios.funcionarios'))
-
         # Busca de funcionários com tratamento de erro
         try:
             # Por padrão, busca apenas funcionários ativos
@@ -53,23 +51,42 @@ def funcionarios():
             
         return render_template('funcionarios.html', 
                              funcionarios=funcionarios,
-                             mostrar_inativos=mostrar_inativos)
+                             mostrar_inativos=mostrar_inativos,
+                             form=form)
     except Exception as e:
         logger.error(f"Erro não tratado na rota funcionarios: {str(e)}")
         flash('Ocorreu um erro inesperado', 'error')
         return redirect(url_for('funcionarios.funcionarios'))
 
 @funcionarios_bp.route('/editar/<id>', methods=['GET', 'POST'])
+@login_required
 def editar_funcionario(id):
     try:
-        if request.method == 'POST':
-            nome = request.form.get('nome', '').strip()
-            cargo = request.form.get('cargo', '').strip()
+        # Busca o funcionário para preencher o formulário
+        try:
+            response = supabase.table('funcionarios').select('*').eq('id', id).single().execute()
+            funcionarios_data = get_supabase_data(response)
             
-            # Validação dos dados
-            if not nome:
-                flash('Nome é obrigatório', 'error')
-                return redirect(url_for('funcionarios.editar_funcionario', id=id))
+            if not funcionarios_data or len(funcionarios_data) == 0:
+                flash('Funcionário não encontrado', 'error')
+                return redirect(url_for('funcionarios.funcionarios'))
+            
+            funcionario = funcionarios_data[0]
+        except Exception as e:
+            logger.error(f"Erro ao buscar funcionário: {str(e)}")
+            flash('Erro ao carregar dados do funcionário', 'error')
+            return redirect(url_for('funcionarios.funcionarios'))
+
+        form = FuncionarioForm(obj=None, data={'nome': funcionario['nome'], 'cargo': funcionario['cargo']})
+        
+        # Preenche o form se for GET (para edição)
+        if request.method == 'GET':
+             form.nome.data = funcionario['nome']
+             form.cargo.data = funcionario['cargo']
+
+        if form.validate_on_submit():
+            nome = form.nome.data
+            cargo = form.cargo.data
             
             # Atualização no banco
             try:
@@ -84,23 +101,8 @@ def editar_funcionario(id):
                 logger.error(f"Erro ao atualizar funcionário: {str(e)}")
                 flash('Erro ao atualizar funcionário', 'error')
                 return redirect(url_for('funcionarios.editar_funcionario', id=id))
-        
-        # Busca o funcionário para edição
-        try:
-            response = supabase.table('funcionarios').select('*').eq('id', id).single().execute()
-            funcionarios = get_supabase_data(response)
             
-            if not funcionarios or len(funcionarios) == 0:
-                flash('Funcionário não encontrado', 'error')
-                return redirect(url_for('funcionarios.funcionarios'))
-            
-            funcionario = funcionarios[0]  # .single() retorna um único registro
-            
-            return render_template('editar_funcionario.html', funcionario=funcionario)
-        except Exception as e:
-            logger.error(f"Erro ao buscar funcionário: {str(e)}")
-            flash('Erro ao carregar dados do funcionário', 'error')
-            return redirect(url_for('funcionarios.funcionarios'))
+        return render_template('editar_funcionario.html', form=form, funcionario=funcionario)
             
     except Exception as e:
         logger.error(f"Erro não tratado na rota editar_funcionario: {str(e)}")
@@ -108,6 +110,7 @@ def editar_funcionario(id):
         return redirect(url_for('funcionarios.funcionarios'))
 
 @funcionarios_bp.route('/excluir/<id>', methods=['POST'])
+@login_required
 def excluir_funcionario(id):
     try:
         # Verifica se existem registros para o funcionário
@@ -137,6 +140,7 @@ def excluir_funcionario(id):
         return redirect(url_for('funcionarios.funcionarios'))
 
 @funcionarios_bp.route('/toggle/<id>', methods=['POST'])
+@login_required
 def toggle_status(id):
     try:
         if not id:

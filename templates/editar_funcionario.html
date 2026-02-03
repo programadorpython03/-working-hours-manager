@@ -14,21 +14,29 @@
 
             <div class="content-card">
                 <form id="form-editar" method="post" novalidate>
+                    {{ form.csrf_token }}
                     <div class="form-group">
-                        <label for="nome" class="tooltip">
-                            Nome*
-                            <span class="tooltip-text">Nome completo do funcionário</span>
-                        </label>
-                        <input type="text" id="nome" name="nome" class="form-control" value="{{ funcionario.nome }}" required>
-                        <div class="invalid-feedback">Por favor, informe o nome do funcionário.</div>
+                        {{ form.nome.label(class="tooltip") }}
+                        {{ form.nome(class="form-control") }}
+                        {% if form.nome.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.nome.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="form-group">
-                        <label for="cargo" class="tooltip">
-                            Cargo
-                            <span class="tooltip-text">Cargo ou função do funcionário na empresa</span>
-                        </label>
-                        <input type="text" id="cargo" name="cargo" class="form-control" value="{{ funcionario.cargo or '' }}">
+                        {{ form.cargo.label(class="tooltip") }}
+                        {{ form.cargo(class="form-control") }}
+                        {% if form.cargo.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.cargo.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <div class="d-flex gap-2">
@@ -46,14 +54,14 @@
 </div>
 
 <script>
-document.getElementById('form-editar').addEventListener('submit', function(e) {
-    const nome = document.getElementById('nome').value.trim();
-    if (!nome) {
-        e.preventDefault();
-        document.getElementById('nome').classList.add('is-invalid');
-    } else {
-        document.getElementById('nome').classList.remove('is-invalid');
-    }
-});
+    document.getElementById('form-editar').addEventListener('submit', function (e) {
+        const nome = document.getElementById('nome').value.trim();
+        if (!nome) {
+            e.preventDefault();
+            document.getElementById('nome').classList.add('is-invalid');
+        } else {
+            document.getElementById('nome').classList.remove('is-invalid');
+        }
+    });
 </script>
-{% endblock %} 
+{% endblock %}

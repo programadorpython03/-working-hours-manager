@@ -4,295 +4,6 @@
 
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
-<style>
-/* Layout Base */
-.dashboard-container {
-    padding: 2rem;
-    background-color: #f8f9fa;
-    min-height: 100vh;
-}
-
-/* Cabeçalho */
-.dashboard-header {
-    margin-bottom: 2rem;
-}
-
-.dashboard-header h1 {
-    color: var(--primary-color);
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.dashboard-header p {
-    color: var(--secondary-color);
-    font-size: 1.1rem;
-    opacity: 0.8;
-}
-
-/* Filtros */
-.filter-section {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-    margin-bottom: 2rem;
-    transition: all 0.3s ease;
-}
-
-.filter-section:hover {
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-}
-
-.filter-section h2 {
-    color: var(--primary-color);
-    font-size: 1.3rem;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
-}
-
-.filter-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    align-items: end;
-}
-
-.form-group {
-    margin-bottom: 0;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--secondary-color);
-    font-weight: 500;
-    font-size: 0.95rem;
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    font-size: 0.95rem;
-}
-
-.form-control:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    outline: none;
-}
-
-/* Cards de Estatísticas */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-}
-
-.stat-card i {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: var(--accent-color);
-    opacity: 0.9;
-}
-
-.stat-card h3 {
-    font-size: 1rem;
-    color: var(--secondary-color);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.stat-card .value {
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-}
-
-/* Gráficos */
-.charts-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    gap: 2rem;
-    margin-bottom: 2rem;
-}
-
-.chart-container {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-    position: relative;
-    height: 400px; /* Altura fixa para o container */
-}
-
-.chart-container:hover {
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-}
-
-.chart-container h2 {
-    color: var(--primary-color);
-    font-size: 1.3rem;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
-}
-
-/* Canvas wrapper para controlar as dimensões */
-.chart-wrapper {
-    position: relative;
-    width: 100%;
-    height: calc(100% - 3rem); /* Altura total menos o espaço do título */
-}
-
-/* Tabela de Registros Recentes */
-.recent-records {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-    transition: all 0.3s ease;
-}
-
-.recent-records:hover {
-    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-}
-
-.recent-records h2 {
-    color: var(--primary-color);
-    font-size: 1.3rem;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
-}
-
-.table {
-    margin-bottom: 0;
-}
-
-.table th {
-    color: var(--secondary-color);
-    font-weight: 600;
-    border-bottom: 2px solid #e0e0e0;
-    padding: 1rem;
-}
-
-.table td {
-    padding: 1rem;
-    vertical-align: middle;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-.badge {
-    font-size: 0.85rem;
-    padding: 0.5em 1em;
-    border-radius: 8px;
-    font-weight: 500;
-}
-
-.bg-warning {
-    background-color: #fff3cd !important;
-    color: #856404 !important;
-}
-
-.bg-info {
-    background-color: #d1ecf1 !important;
-    color: #0c5460 !important;
-}
-
-/* Botões */
-.btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    font-size: 0.95rem;
-}
-
-.btn-primary {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #2980b9;
-    border-color: #2980b9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
-}
-
-/* Loading State */
-.loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.7;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 1.5rem;
-    height: 1.5rem;
-    margin: -0.75rem 0 0 -0.75rem;
-    border: 2px solid var(--accent-color);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Responsividade */
-@media (max-width: 768px) {
-    .dashboard-container {
-        padding: 1rem;
-    }
-    
-    .charts-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .filter-form {
-        grid-template-columns: 1fr;
-    }
-    
-    .stat-card {
-        padding: 1.25rem;
-    }
-    
-    .stat-card .value {
-        font-size: 1.75rem;
-    }
-}
-</style>
 {% endblock %}
 
 {% block content %}
@@ -308,25 +19,26 @@
         <form id="filter-form" class="filter-form" method="get" action="/">
             <div class="form-group">
                 <label for="mes">Mês</label>
-                <input type="month" id="mes" name="mes" class="form-control" value="{{ mes_atual|default(datetime.utcnow().strftime('%Y-%m')) }}" required>
+                <input type="month" id="mes" name="mes" class="form-control"
+                    value="{{ mes_atual|default(datetime.utcnow().strftime('%Y-%m')) }}" required>
             </div>
             <div class="form-group">
                 <label for="funcionario">Funcionário</label>
                 <select id="funcionario" name="funcionario_id" class="form-control">
                     <option value="">Todos</option>
                     {% for f in funcionarios %}
-                    <option value="{{ f.id }}" {% if f.id == funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
+                    <option value="{{ f.id }}" {% if f.id==funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-filter me-2"></i>Filtrar
-            </button>
+                    <i class="fas fa-filter me-2"></i>Filtrar
+                </button>
             </div>
         </form>
     </div>
-    
+
     <!-- Cards de Estatísticas -->
     <div class="dashboard-grid">
         <div class="stat-card">
@@ -334,13 +46,13 @@
             <h3>Total de Funcionários</h3>
             <div class="value">{{ total_funcionarios }}</div>
         </div>
-        
+
         <div class="stat-card">
             <i class="fas fa-calendar-check"></i>
             <h3>Registros do Mês</h3>
             <div class="value">{{ total_registros }}</div>
         </div>
-        
+
         <div class="stat-card">
             <i class="fas fa-clock"></i>
             <h3>Horas Extras</h3>
@@ -350,10 +62,10 @@
 
     <!-- Gráficos -->
     <div class="charts-container">
-    <div class="chart-container">
+        <div class="chart-container">
             <h2>Horas Trabalhadas por Dia</h2>
             <div class="chart-wrapper">
-        <canvas id="horasChart"></canvas>
+                <canvas id="horasChart"></canvas>
             </div>
         </div>
         <div class="chart-container">
@@ -410,200 +122,200 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Configuração global do Chart.js
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-Chart.defaults.plugins.tooltip.titleColor = '#333';
-Chart.defaults.plugins.tooltip.bodyColor = '#666';
-Chart.defaults.plugins.tooltip.borderColor = '#ddd';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.tooltip.padding = 12;
-Chart.defaults.plugins.tooltip.cornerRadius = 8;
+    // Configuração global do Chart.js
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+    Chart.defaults.plugins.tooltip.titleColor = '#333';
+    Chart.defaults.plugins.tooltip.bodyColor = '#666';
+    Chart.defaults.plugins.tooltip.borderColor = '#ddd';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.cornerRadius = 8;
 
-// Variáveis globais
-let dailyChart = null;
-let monthlyChart = null;
+    // Variáveis globais
+    let dailyChart = null;
+    let monthlyChart = null;
 
-// Configurações comuns
-const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    interaction: {
-        mode: 'index',
-        intersect: false
-    },
-    plugins: {
-        legend: {
-            position: 'top',
-            labels: {
-                padding: 20,
-                usePointStyle: true,
-                pointStyle: 'circle'
+    // Configurações comuns
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
             }
-        }
-    },
-    scales: {
-        y: {
-            beginAtZero: true,
-            grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                title: {
+                    display: true,
+                    text: 'Horas'
+                }
             },
-            title: {
-                display: true,
-                text: 'Horas'
-            }
-        },
-        x: {
-            grid: {
-                display: false
+            x: {
+                grid: {
+                    display: false
+                }
             }
         }
-    }
-};
-
-// Função para criar o gráfico diário
-function createDailyChart(data) {
-    const ctx = document.getElementById('horasChart');
-    if (!ctx) return;
-    
-    // Destrói o gráfico existente se houver
-    if (dailyChart) {
-        dailyChart.destroy();
-    }
-    
-    // Cria o novo gráfico
-    dailyChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: 'Horas Normais',
-                data: data.horas_normais,
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                borderRadius: 5
-            }, {
-                label: 'Horas Extras',
-                data: data.horas_extras,
-                backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                borderRadius: 5
-            }, {
-                label: 'Adicional Noturno',
-                data: data.adicional_noturno,
-                backgroundColor: 'rgba(75, 192, 192, 0.5)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                borderRadius: 5
-            }]
-        },
-        options: commonOptions
-    });
-}
-
-// Função para criar o gráfico mensal
-function createMonthlyChart(data) {
-    const ctx = document.getElementById('mensalChart');
-    if (!ctx) return;
-    
-    // Destrói o gráfico existente se houver
-    if (monthlyChart) {
-        monthlyChart.destroy();
-    }
-    
-    // Cria o novo gráfico
-    monthlyChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: 'Horas Normais',
-                data: data.horas_normais,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 2
-            }, {
-                label: 'Horas Extras',
-                data: data.horas_extras,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 2
-            }, {
-                label: 'Adicional Noturno',
-                data: data.adicional_noturno,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                tension: 0.4,
-                fill: true,
-                borderWidth: 2
-            }]
-        },
-        options: commonOptions
-    });
-}
-
-// Função para atualizar os dados dos gráficos
-function updateCharts(data) {
-    if (!data || !data.grafico_data || !data.grafico_mensal) {
-        console.error('Dados inválidos para atualização dos gráficos');
-        return;
-    }
-
-    try {
-        // Atualiza o gráfico diário
-        if (dailyChart) {
-            dailyChart.data.labels = data.grafico_data.labels;
-            dailyChart.data.datasets[0].data = data.grafico_data.horas_normais;
-            dailyChart.data.datasets[1].data = data.grafico_data.horas_extras;
-            dailyChart.data.datasets[2].data = data.grafico_data.adicional_noturno;
-            dailyChart.update('none');
-        }
-
-        // Atualiza o gráfico mensal
-        if (monthlyChart) {
-            monthlyChart.data.labels = data.grafico_mensal.labels;
-            monthlyChart.data.datasets[0].data = data.grafico_mensal.horas_normais;
-            monthlyChart.data.datasets[1].data = data.grafico_mensal.horas_extras;
-            monthlyChart.data.datasets[2].data = data.grafico_mensal.adicional_noturno;
-            monthlyChart.update('none');
-        }
-    } catch (error) {
-        console.error('Erro ao atualizar gráficos:', error);
-    }
-}
-
-// Função para atualizar os cards de estatísticas
-function updateStats(data) {
-    if (!data) return;
-    
-    const stats = {
-        funcionarios: document.querySelector('.stat-card:nth-child(1) .value'),
-        registros: document.querySelector('.stat-card:nth-child(2) .value'),
-        horasExtras: document.querySelector('.stat-card:nth-child(3) .value')
     };
 
-    if (stats.funcionarios) stats.funcionarios.textContent = data.total_funcionarios;
-    if (stats.registros) stats.registros.textContent = data.total_registros;
-    if (stats.horasExtras) stats.horasExtras.textContent = `${data.total_horas_extras.toFixed(1)}h`;
-}
+    // Função para criar o gráfico diário
+    function createDailyChart(data) {
+        const ctx = document.getElementById('horasChart');
+        if (!ctx) return;
 
-// Função para atualizar a tabela de registros recentes
-function updateRecentRecords(data) {
-    if (!data || !data.registros_recentes) return;
+        // Destrói o gráfico existente se houver
+        if (dailyChart) {
+            dailyChart.destroy();
+        }
 
-    const tbody = document.querySelector('.table tbody');
-    if (!tbody) return;
+        // Cria o novo gráfico
+        dailyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Horas Normais',
+                    data: data.horas_normais,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }, {
+                    label: 'Horas Extras',
+                    data: data.horas_extras,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }, {
+                    label: 'Adicional Noturno',
+                    data: data.adicional_noturno,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: commonOptions
+        });
+    }
 
-    tbody.innerHTML = data.registros_recentes.map(registro => {
-        const data = new Date(registro.data_trabalho);
-        return `
+    // Função para criar o gráfico mensal
+    function createMonthlyChart(data) {
+        const ctx = document.getElementById('mensalChart');
+        if (!ctx) return;
+
+        // Destrói o gráfico existente se houver
+        if (monthlyChart) {
+            monthlyChart.destroy();
+        }
+
+        // Cria o novo gráfico
+        monthlyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Horas Normais',
+                    data: data.horas_normais,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }, {
+                    label: 'Horas Extras',
+                    data: data.horas_extras,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }, {
+                    label: 'Adicional Noturno',
+                    data: data.adicional_noturno,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: commonOptions
+        });
+    }
+
+    // Função para atualizar os dados dos gráficos
+    function updateCharts(data) {
+        if (!data || !data.grafico_data || !data.grafico_mensal) {
+            console.error('Dados inválidos para atualização dos gráficos');
+            return;
+        }
+
+        try {
+            // Atualiza o gráfico diário
+            if (dailyChart) {
+                dailyChart.data.labels = data.grafico_data.labels;
+                dailyChart.data.datasets[0].data = data.grafico_data.horas_normais;
+                dailyChart.data.datasets[1].data = data.grafico_data.horas_extras;
+                dailyChart.data.datasets[2].data = data.grafico_data.adicional_noturno;
+                dailyChart.update('none');
+            }
+
+            // Atualiza o gráfico mensal
+            if (monthlyChart) {
+                monthlyChart.data.labels = data.grafico_mensal.labels;
+                monthlyChart.data.datasets[0].data = data.grafico_mensal.horas_normais;
+                monthlyChart.data.datasets[1].data = data.grafico_mensal.horas_extras;
+                monthlyChart.data.datasets[2].data = data.grafico_mensal.adicional_noturno;
+                monthlyChart.update('none');
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar gráficos:', error);
+        }
+    }
+
+    // Função para atualizar os cards de estatísticas
+    function updateStats(data) {
+        if (!data) return;
+
+        const stats = {
+            funcionarios: document.querySelector('.stat-card:nth-child(1) .value'),
+            registros: document.querySelector('.stat-card:nth-child(2) .value'),
+            horasExtras: document.querySelector('.stat-card:nth-child(3) .value')
+        };
+
+        if (stats.funcionarios) stats.funcionarios.textContent = data.total_funcionarios;
+        if (stats.registros) stats.registros.textContent = data.total_registros;
+        if (stats.horasExtras) stats.horasExtras.textContent = `${data.total_horas_extras.toFixed(1)}h`;
+    }
+
+    // Função para atualizar a tabela de registros recentes
+    function updateRecentRecords(data) {
+        if (!data || !data.registros_recentes) return;
+
+        const tbody = document.querySelector('.table tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = data.registros_recentes.map(registro => {
+            const data = new Date(registro.data_trabalho);
+            return `
             <tr>
                 <td>${data.toLocaleDateString()}</td>
                 <td>${registro.funcionarios?.nome || '-'}</td>
@@ -612,41 +324,42 @@ function updateRecentRecords(data) {
                 <td>${registro.adicional_noturno > 0 ? `<span class="badge bg-info">${registro.adicional_noturno}h</span>` : '-'}</td>
             </tr>
         `;
-    }).join('');
-}
+        }).join('');
+    }
 
-// Inicialização quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializa os gráficos com os dados iniciais
-    try {
-        const initialData = {
-            grafico_data: {{ grafico_data|tojson }},
-            grafico_mensal: {{ grafico_mensal|tojson }}
+    // Inicialização quando o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inicializa os gráficos com os dados iniciais
+        try {
+            const initialData = {
+                grafico_data: {{ grafico_data| tojson
+        }},
+        grafico_mensal: {{ grafico_mensal| tojson }}
         };
-        
-        createDailyChart(initialData.grafico_data);
-        createMonthlyChart(initialData.grafico_mensal);
+
+    createDailyChart(initialData.grafico_data);
+    createMonthlyChart(initialData.grafico_mensal);
     } catch (error) {
         console.error('Erro ao inicializar gráficos:', error);
     }
-    
+
     // Handler do formulário
     const form = document.getElementById('filter-form');
     if (!form) return;
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        
+
         const submitButton = form.querySelector('button[type="submit"]');
         if (!submitButton) return;
 
         const originalText = submitButton.innerHTML;
-        
+
         try {
             // Desabilita o botão e mostra loading
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
-            
+
             // Prepara e envia a requisição
             const formData = new FormData(form);
             const response = await fetch(window.location.pathname + '?' + new URLSearchParams(formData), {
@@ -655,18 +368,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error('Erro ao atualizar dados');
             }
-            
+
             const data = await response.json();
-            
+
             // Atualiza os dados na página
             updateStats(data);
             updateRecentRecords(data);
             updateCharts(data);
-            
+
         } catch (error) {
             console.error('Erro:', error);
             alert('Ocorreu um erro ao atualizar os dados. Tente novamente mais tarde.');

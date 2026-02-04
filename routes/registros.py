@@ -131,36 +131,28 @@ def registros():
             registros_processados = []
             for registro in registros:
                 try:
-                    # Processamento seguro de cada campo
-                    try:
-                        data_fmt = datetime.strptime(registro.get('data_trabalho', ''), '%Y-%m-%d').strftime('%d/%m/%Y') if registro.get('data_trabalho') else ''
-                    except Exception as e:
-                         data_fmt = ''
-                    try:
-                        entrada_fmt = formatar_horario(registro.get('hora_entrada'))
-                    except Exception as e:
-                        entrada_fmt = ''
-                    try:
-                        saida_fmt = formatar_horario(registro.get('hora_saida'))
-                    except Exception as e:
-                        saida_fmt = ''
-                    try:
-                        almoco_inicio_fmt = formatar_horario(registro.get('hora_almoco_saida'))
-                    except Exception as e:
-                        almoco_inicio_fmt = ''
-                    try:
-                        almoco_fim_fmt = formatar_horario(registro.get('hora_almoco_volta'))
-                    except Exception as e:
-                        almoco_fim_fmt = ''
+                    # Parse Data
+                    r_data = None
+                    if registro.get('data_trabalho'):
+                        try:
+                            r_data = datetime.strptime(registro['data_trabalho'], '%Y-%m-%d')
+                        except:
+                            pass
+                    
+                    # Parse Times using validar_horario (returns time obj or None)
+                    r_entrada = validar_horario(registro.get('hora_entrada'))
+                    r_saida = validar_horario(registro.get('hora_saida'))
+                    r_almoco_inicio = validar_horario(registro.get('hora_almoco_saida'))
+                    r_almoco_fim = validar_horario(registro.get('hora_almoco_volta'))
 
                     registro_processado = {
                         'id': registro.get('id', ''),
-                        'data': data_fmt,
-                        'funcionario': registro.get('funcionarios', {}).get('nome', '') if registro.get('funcionarios') else '',
-                        'entrada': entrada_fmt,
-                        'saida': saida_fmt,
-                        'almoco_inicio': almoco_inicio_fmt,
-                        'almoco_fim': almoco_fim_fmt,
+                        'data': r_data,
+                        'funcionario': registro.get('funcionarios', {}), # Pass entire dict to access .nome
+                        'entrada': r_entrada,
+                        'saida': r_saida,
+                        'almoco_inicio': r_almoco_inicio,
+                        'almoco_fim': r_almoco_fim,
                         'horas_normais': registro.get('horas_normais', '00:00'),
                         'horas_extras': registro.get('horas_extras', '00:00'),
                         'adicional_noturno': registro.get('adicional_noturno', '00:00')
@@ -287,7 +279,7 @@ def editar_registro(id):
 
 @registros_bp.route('/excluir/<id>', methods=['POST'])
 @login_required
-def excluir(id):
+def excluir_registro(id):
     try:
         # Exclusão do registro
         try:

@@ -3,8 +3,7 @@
 {% block title %}Funcionários - Controle de Horas{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/funcionarios.css') }}">
+<!-- Custom styles for funcionarios if any -->
 {% endblock %}
 
 {% block content %}
@@ -19,11 +18,11 @@
                 {{ form.nome.label(class="tooltip") }}
                 {{ form.nome(class="form-control") }}
                 {% if form.nome.errors %}
-                    <div class="invalid-feedback d-block">
-                        {% for error in form.nome.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
+                <div class="invalid-feedback d-block">
+                    {% for error in form.nome.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
                 {% endif %}
             </div>
 
@@ -31,11 +30,11 @@
                 {{ form.cargo.label(class="tooltip") }}
                 {{ form.cargo(class="form-control") }}
                 {% if form.cargo.errors %}
-                    <div class="invalid-feedback d-block">
-                        {% for error in form.cargo.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
+                <div class="invalid-feedback d-block">
+                    {% for error in form.cargo.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
                 {% endif %}
             </div>
 
@@ -50,12 +49,12 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">Funcionários Cadastrados</h2>
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="mostrarInativos" 
-                       {% if mostrar_inativos %}checked{% endif %}>
+                <input class="form-check-input" type="checkbox" id="mostrarInativos" {% if mostrar_inativos %}checked{%
+                    endif %}>
                 <label class="form-check-label" for="mostrarInativos">Mostrar Inativos</label>
             </div>
         </div>
-        
+
         <div class="table-responsive">
             <table class="table table-funcionarios">
                 <thead>
@@ -86,14 +85,17 @@
                         </td>
                         <td>
                             <div class="d-flex gap-2">
-                                <a href="{{ url_for('funcionarios.editar_funcionario', id=f.id) }}" class="btn btn-primary btn-sm tooltip">
+                                <a href="{{ url_for('funcionarios.editar_funcionario', id=f.id) }}"
+                                    class="btn btn-primary btn-sm tooltip">
                                     <i class="fas fa-edit fa-lg"></i>
                                     <span class="tooltip-text">Editar funcionário</span>
                                 </a>
-                                
+
                                 {% if f.ativo %}
-                                <form method="post" action="{{ url_for('funcionarios.excluir_funcionario', id=f.id) }}" class="d-inline">
-                                    <button type="submit" class="btn btn-danger btn-sm tooltip" onclick="return confirmarExclusao('{{ f.id }}')">
+                                <form method="post" action="{{ url_for('funcionarios.excluir_funcionario', id=f.id) }}"
+                                    class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm tooltip"
+                                        onclick="return confirmarExclusao('{{ f.id }}')">
                                         <i class="fas fa-trash fa-lg"></i>
                                         <span class="tooltip-text">Excluir funcionário</span>
                                     </button>

@@ -3,8 +3,7 @@
 {% block title %}Registros de Horas - Controle de Horas{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/registros.css') }}">
+<!-- Optional: Add custom styles here if strictly necessary, but prefer static/style.css -->
 {% endblock %}
 
 {% block content %}
@@ -109,9 +108,9 @@
                     {% for r in registros %}
                     <tr>
                         <td>{{ r.funcionario.nome }}</td>
-                        <td>{{ r.data.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ r.entrada.strftime('%H:%M') }}</td>
-                        <td>{{ r.saida.strftime('%H:%M') }}</td>
+                        <td>{{ r.data.strftime('%d/%m/%Y') if r.data else '-' }}</td>
+                        <td>{{ r.entrada.strftime('%H:%M') if r.entrada else '-' }}</td>
+                        <td>{{ r.saida.strftime('%H:%M') if r.saida else '-' }}</td>
                         <td>
                             {% if r.almoco_inicio and r.almoco_fim %}
                             {{ r.almoco_inicio.strftime('%H:%M') }} - {{ r.almoco_fim.strftime('%H:%M') }}

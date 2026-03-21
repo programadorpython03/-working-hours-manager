@@ -3,7 +3,7 @@
 {% block title %}Dashboard - Controle de Horas{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+<!--link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">-->
 {% endblock %}
 
 {% block content %}
@@ -27,7 +27,8 @@
                 <select id="funcionario" name="funcionario_id" class="form-control">
                     <option value="">Todos</option>
                     {% for f in funcionarios %}
-                    <option value="{{ f.id }}" {% if f.id==funcionario_id %}selected{% endif %}>{{ f.nome }}</option>
+                    <option value="{{ f.id }}" {% if f.id==funcionario_id %}selected{% endif %}>{{ f.nome }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
@@ -93,7 +94,8 @@
                 <tbody>
                     {% for registro in registros_recentes %}
                     <tr>
-                        <td>{{ registro.data_trabalho.strftime('%d/%m/%Y') if registro.data_trabalho else '-' }}</td>
+                        <td>{{ registro.data_trabalho.strftime('%d/%m/%Y') if registro.data_trabalho else '-' }}
+                        </td>
                         <td>{{ registro.funcionarios.nome if registro.funcionarios else '-' }}</td>
                         <td>{{ registro.horas_normais }}h</td>
                         <td>
@@ -121,6 +123,12 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="grafico-data" type="application/json">
+    {{ grafico_data | tojson }}
+</script>
+<script id="grafico-mensal" type="application/json">
+    {{ grafico_mensal | tojson }}
+</script>
 <script>
     // Configuração global do Chart.js
     Chart.defaults.font.family = "'Inter', sans-serif";
@@ -332,63 +340,62 @@
         // Inicializa os gráficos com os dados iniciais
         try {
             const initialData = {
-                grafico_data: {{ grafico_data| tojson
-        }},
-        grafico_mensal: {{ grafico_mensal| tojson }}
-        };
+                grafico_data: JSON.parse(document.getElementById('grafico-data').textContent),
+                grafico_mensal: JSON.parse(document.getElementById('grafico-mensal').textContent)
+            };
 
-    createDailyChart(initialData.grafico_data);
-    createMonthlyChart(initialData.grafico_mensal);
-    } catch (error) {
-        console.error('Erro ao inicializar gráficos:', error);
-    }
-
-    // Handler do formulário
-    const form = document.getElementById('filter-form');
-    if (!form) return;
-
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const submitButton = form.querySelector('button[type="submit"]');
-        if (!submitButton) return;
-
-        const originalText = submitButton.innerHTML;
-
-        try {
-            // Desabilita o botão e mostra loading
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
-
-            // Prepara e envia a requisição
-            const formData = new FormData(form);
-            const response = await fetch(window.location.pathname + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Erro ao atualizar dados');
-            }
-
-            const data = await response.json();
-
-            // Atualiza os dados na página
-            updateStats(data);
-            updateRecentRecords(data);
-            updateCharts(data);
-
+            createDailyChart(initialData.grafico_data);
+            createMonthlyChart(initialData.grafico_mensal);
         } catch (error) {
-            console.error('Erro:', error);
-            alert('Ocorreu um erro ao atualizar os dados. Tente novamente mais tarde.');
-        } finally {
-            // Restaura o botão
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalText;
+            console.error('Erro ao inicializar gráficos:', error);
         }
+
+        // Handler do formulário
+        const form = document.getElementById('filter-form');
+        if (!form) return;
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (!submitButton) return;
+
+            const originalText = submitButton.innerHTML;
+
+            try {
+                // Desabilita o botão e mostra loading
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+
+                // Prepara e envia a requisição
+                const formData = new FormData(form);
+                const response = await fetch(window.location.pathname + '?' + new URLSearchParams(formData), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao atualizar dados');
+                }
+
+                const data = await response.json();
+
+                // Atualiza os dados na página
+                updateStats(data);
+                updateRecentRecords(data);
+                updateCharts(data);
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Ocorreu um erro ao atualizar os dados. Tente novamente mais tarde.');
+            } finally {
+                // Restaura o botão
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        });
     });
-});
 </script>
 {% endblock %}

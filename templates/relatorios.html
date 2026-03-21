@@ -3,8 +3,8 @@
 {% block title %}Relatórios - Controle de Horas{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/relatorios.css') }}">
+<!--<ink rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">-->
+<!--<link rel="stylesheet" href="{{ url_for('static', filename='css/relatorios.css') }}">-->
 {% endblock %}
 
 {% block content %}
@@ -23,7 +23,8 @@
                     <select id="funcionario_id" name="funcionario_id" class="form-control">
                         <option value="">Todos os funcionários</option>
                         {% for f in funcionarios %}
-                        <option value="{{ f.id }}" {% if f.id == funcionario_id or f.id|string == funcionario_id|string %}selected{% endif %}>{{ f.nome }}</option>
+                        <option value="{{ f.id }}" {% if f.id==funcionario_id or f.id|string==funcionario_id|string
+                            %}selected{% endif %}>{{ f.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -34,8 +35,8 @@
                         Data Inicial
                         <span class="tooltip-text">Data inicial do período</span>
                     </label>
-                    <input type="date" id="data_inicio" name="data_inicio" class="form-control" 
-                           value="{{ data_inicio.strftime('%Y-%m-%d') if data_inicio else '' }}">
+                    <input type="date" id="data_inicio" name="data_inicio" class="form-control"
+                        value="{{ data_inicio.strftime('%Y-%m-%d') if data_inicio else '' }}">
                 </div>
             </div>
             <div class="col-md-3">
@@ -45,7 +46,7 @@
                         <span class="tooltip-text">Data final do período</span>
                     </label>
                     <input type="date" id="data_fim" name="data_fim" class="form-control"
-                           value="{{ data_fim.strftime('%Y-%m-%d') if data_fim else '' }}">
+                        value="{{ data_fim.strftime('%Y-%m-%d') if data_fim else '' }}">
                 </div>
             </div>
             <div class="col-md-2 d-flex flex-column align-items-end">
@@ -128,10 +129,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="grafico-data" type="application/json">
+    {{ grafico_data | tojson }}
+</script>
 <script>
-// Dados do gráfico disponíveis globalmente
-const graficoData = {{ grafico_data|tojson }};
-console.log(graficoData);
+    // Dados do gráfico disponíveis globalmente
+    const graficoData = JSON.parse(document.getElementById('grafico-data').textContent);
+    console.log(graficoData);
 </script>
 <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
 {% endblock %}
